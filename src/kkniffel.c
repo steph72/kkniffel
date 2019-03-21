@@ -599,33 +599,30 @@ void startgame()
 	revers(1);
 	textcolor(colSplash);
 	cputc(176);
-	for (i = 0; i < 38; i++)
-		cputc(195);
+	for (i = 0; i < 38; ++i)
+		cputc(192);
 	cputc(174);
-	cputc(194);
+	cputc(221);
 	textcolor(colSplashRed);
 	cprintf("k");
 	textcolor(colSplash);
-	cprintf("kniffel v2.1                         ");
-	cputc(194);
-	cputc(194);
-	cprintf("written by herr k. @ k-burg, 2016/17  ");
-	cputc(194);
-	cputc(194);
+	cprintf("kniffel v2.2                         ");
+	cputc(221);
+	cputc(221);
+	cprintf("written by herr k. @ k-burg, 2019     ");
+	cputc(221);
+	cputc(221);
 	cprintf("                                      ");
-	cputc(194);
-	cputc(194);
-	cprintf("with special thanks to                ");
-	cputc(194);
-	cputc(194);
-	cprintf("frau k., buba k., candor k. and the   ");
-	cputc(194);
-	cputc(194);
-	cprintf("seven turtles.                        ");
-	cputc(194);
+	cputc(221);
+	cputc(221);
+	cprintf("with special thanks to frau k.,       ");
+	cputc(221);
+	cputc(221);
+	cprintf("buba k., candor k. and the 7 turtles! ");
+	cputc(221);
 	cputc(173);
-	for (i = 0; i < 38; i++)
-		cputc(195);
+	for (i = 0; i < 38; ++i)
+		cputc(192);
 	cputc(189);
 	revers(0);
 	clearLower();
