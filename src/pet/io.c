@@ -30,9 +30,6 @@ void startup(void)
 {
     cbm_k_bsout(0x8e); // select graphic charset
     cbm_k_bsout(0x08); // disable c= + shift
-    bgcolor(colBackground);
-    bordercolor(colBorder);
-    textcolor(colText);
     clrscr();
 }
 

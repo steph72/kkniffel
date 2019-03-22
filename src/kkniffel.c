@@ -12,6 +12,12 @@
 
 #define MAX_ROLL_COUNT 3
 
+// clang-format off
+#if defined(__PET__)
+#pragma warn(no-effect, off)
+#endif
+// clang-format on
+
 char inbuf[40];
 char numbuf[6];
 char pnames[4][20];		  // player names
@@ -56,11 +62,8 @@ void centerLower(char *msg)
 
 void clearbuf()
 {
-	do
-	{
-		if (kbhit() != 0)
-			cgetc();
-	} while (kbhit() != 0);
+	while (kbhit())
+		cgetc();
 }
 
 void waitkey(char key)
