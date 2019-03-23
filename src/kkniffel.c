@@ -893,6 +893,14 @@ void mainloop()
 				shouldRoll[idx] = !shouldRoll[idx];
 				plotDice(idx, dvalues[idx], shouldRoll[idx]);
 			}
+			if (cmd==' ' && rollCount < MAX_ROLL_COUNT) {
+				centerLower("katja-move!");
+				for (idx=0;idx<5;++idx) {
+					shouldRoll[idx] = TRUE;
+					plotDice(idx,dvalues[idx],shouldRoll[idx]);
+				}
+				clearLower();
+			}
 			if (cmd == '\n' && rollCount < MAX_ROLL_COUNT && hasChosenRerollDice())
 			{
 				doTurnRoll();
