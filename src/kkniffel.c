@@ -572,6 +572,7 @@ void displayBoard()
 		textcolor(textcolorForRow(i));
 		cprintf(rownames[i]);
 	}
+	initDiceDisplay();
 }
 
 void gamePreflight()
@@ -703,6 +704,20 @@ void commitSort()
 		shouldRoll[i] = FALSE;
 	}
 	showCurrentRoll();
+}
+
+char shouldCommitRow(unsigned char row)
+{
+	char jn;
+	if (tvals[row] > 0)
+	{
+		return TRUE;
+	}
+	clearLower();
+	centerLower("wirklich? null punkte?!");
+	jn = cgetc();
+	clearLower();
+	return (jn=='j');
 }
 
 void commitRow(unsigned char row)
@@ -894,14 +909,17 @@ void mainloop()
 				}
 				if (ktable[idx][currentPlayer] == -1)
 				{
-					removeTvalDisplay();
-					commitRow(idx);
-					updateSums();
-					rollCount = 1;
-					checkQuit();
-					if (!quit)
+					if (shouldCommitRow(idx))
 					{
-						nextPlayer();
+						removeTvalDisplay();
+						commitRow(idx);
+						updateSums();
+						rollCount = 1;
+						checkQuit();
+						if (!quit)
+						{
+							nextPlayer();
+						}
 					}
 				}
 			}

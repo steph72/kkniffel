@@ -27,6 +27,8 @@ const unsigned char colCurrentRollIdx = BCOLOR_ORANGE + CATTR_LUMA4;
 
 #define screen (unsigned char *)0x0c00
 
+void setDiceColor(unsigned char color);
+
 void startup(void)
 {
     cbm_k_bsout(0x8e); // select graphic charset
@@ -39,7 +41,25 @@ void startup(void)
 
 void initIO(void)
 {
-    // TODO
+    // TODO: install custom charset for dice
+}
+
+void initDiceDisplay(void)
+{
+    setDiceColor(BCOLOR_ORANGE + CATTR_LUMA4);
+}
+
+
+void setDiceColor(unsigned char color)
+{
+    unsigned int x,y;
+    for (y = 0; y <= 24; ++y)
+    {
+        for (x = 35; x < 40; ++x)
+        {
+                *(COLOR_RAM + x + (40 * y)) = color;
+        }
+    }
 }
 
 void __fastcall__ _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)

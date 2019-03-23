@@ -2,6 +2,9 @@
 #include <6502.h>
 #include <cbm.h>
 #include <conio.h>
+#include <c128.h>
+#include <stdio.h>
+
 #include "../io.h"
 #include "../chargen.h"
 
@@ -21,10 +24,11 @@ const unsigned char colOddValue = 13;  // odd row roll: light green
 const unsigned char colUpperSum = 4;   // upper sum
 const unsigned char colLowerSum = 3;   // lower sum
 const unsigned char colBonus = 2;      // bonus
-const unsigned char colCurrentRollIdx = 8; 
+const unsigned char colCurrentRollIdx = 8;
 
 #define screen (unsigned char *)0x400u
 
+void setDiceColor(unsigned char color);
 
 void startup(void)
 {
@@ -41,13 +45,32 @@ void initIO(void)
     // TODO
 }
 
+void initDiceDisplay(void)
+{
+    setDiceColor(COLOR_ORANGE);
+}
+
+void setDiceColor(unsigned char color)
+{
+    unsigned int x,y;
+    for (y = 0; y <= 24; ++y)
+    {
+        for (x = 35; x < 40; ++x)
+        {
+                *(COLOR_RAM + x + (40 * y)) = color;
+        }
+    }
+}
+
 void __fastcall__ _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
 {
     register unsigned char c;
     register unsigned char idx;
 
     unsigned char *row1, *row2, *row3, *row4, *row5;
+
     idx = value - 1;
+
     if (r)
         r = 128;
 

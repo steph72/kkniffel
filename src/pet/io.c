@@ -38,6 +38,10 @@ void initIO(void)
     // TODO
 }
 
+void initDiceDisplay() {
+    // nothing to be done on PET
+}
+
 void __fastcall__ _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
 {
     register unsigned char c;

@@ -6,6 +6,8 @@ void __fastcall__ _plotDice(unsigned char value, unsigned char x, unsigned char 
 void plotDice(unsigned char nr, unsigned char value, char revers);
 void eraseDie(unsigned char nr);
 
+void initDiceDisplay(void);
+
 extern const char dice[6][25];
 
 extern const unsigned char colBackground;

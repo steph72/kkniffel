@@ -1,6 +1,7 @@
 #include <6502.h>
 #include <cbm.h>
 #include <conio.h>
+#include <c64.h>
 #include "../io.h"
 #include "../chargen.h"
 
@@ -13,11 +14,11 @@
 #define screenP (unsigned char *)648u // screen pointer for kernel
 
 void installCharset(void);
+void setDiceColor(unsigned char color);
 
 const unsigned char colTable = 5;
 const unsigned char colLegend = 14;
 const unsigned char colText = 5;
-
 
 const unsigned char colSplash = 4;
 const unsigned char colSplashRed = 2;
@@ -28,7 +29,7 @@ const unsigned char colOddValue = 13;  // odd row roll: light green
 const unsigned char colUpperSum = 4;   // upper sum
 const unsigned char colLowerSum = 3;   // lower sum
 const unsigned char colBonus = 2;      // bonus
-const unsigned char colCurrentRollIdx = 8; 
+const unsigned char colCurrentRollIdx = 8;
 
 void startup(void)
 {
@@ -82,6 +83,23 @@ void installCharset(void)
 void initIO(void)
 {
     installCharset();
+}
+
+void initDiceDisplay(void)
+{
+    setDiceColor(COLOR_ORANGE);
+}
+
+void setDiceColor(unsigned char color)
+{
+    unsigned int x, y;
+    for (y = 0; y <= 24; ++y)
+    {
+        for (x = 35; x < 40; ++x)
+        {
+            *(COLOR_RAM + x + (40 * y)) = color;
+        }
+    }
 }
 
 void __fastcall__ _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
