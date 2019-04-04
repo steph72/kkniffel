@@ -45,7 +45,8 @@ const char *rownames[] = {"einer", "zweier", "dreier", "vierer", "fuenfer",
 char numPlayers;
 char namelength;
 
-void clearLower()
+
+void clearLower(void)
 {
 	gotoxy(0, 24);
 	cputs("                                  ");
@@ -59,7 +60,7 @@ void centerLower(char *msg)
 	gotoxy(0, 0);
 }
 
-void clearbuf()
+void clearbuf(void)
 {
 	while (kbhit())
 		cgetc();
