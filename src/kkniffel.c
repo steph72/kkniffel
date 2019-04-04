@@ -6,9 +6,7 @@
 #include <time.h>
 
 #include "io.h"
-
-#define FALSE 0
-#define TRUE -1
+#include "checks.h"
 
 #define MAX_ROLL_COUNT 3
 
@@ -32,8 +30,9 @@ char currentPlayer; // the current player
 
 int tvals[18]; // temporary table values (for wizard)
 
-void recalcTVals(void);		  // recalc temp values
-void removeTvalDisplay(void); // remove tval display
+void recalcTVals(void);		   // recalc temp values
+void refreshTvalsDisplay(void);
+void removeTvalDisplay(void);  // remove tval display
 
 unsigned char quit;
 unsigned char currentRound;
@@ -170,6 +169,7 @@ void doTurnRoll()
 		shouldRoll[i] = FALSE;
 	}
 	recalcTVals();
+	refreshTvalsDisplay();
 	clearbuf();
 }
 
@@ -284,154 +284,9 @@ void displayTableEntry(char player, char row, int value, char temp)
 	cputs(numbuf);
 }
 
-unsigned char checkSame(char count)
+void refreshTvalsDisplay(void)
 {
-	unsigned char die;
-	unsigned char number;
-	unsigned char occurances;
-	for (number = 1; number < 7; ++number)
-	{
-		occurances = 0;
-		for (die = 0; die < 5; ++die)
-		{
-			if (dvalues[die] == number)
-			{
-				++occurances;
-			}
-		}
-		if (occurances == count)
-		{
-			return number;
-		}
-	}
-	return FALSE;
-}
-
-unsigned char currentDiceSum()
-{
-	unsigned char die;
-	unsigned char sum;
-	sum = 0;
-	for (die = 0; die < 5; ++die)
-	{
-		sum += dvalues[die];
-	}
-	return sum;
-}
-
-char checkStreet()
-{
-	unsigned char i;
-
-	for (i = 0; i < 6; i++)
-	{
-		numbuf[i] = 0;
-	}
-
-	for (i = 0; i < 5; i++)
-	{
-		numbuf[dvalues[i] - 1]++;
-	}
-
-	if ((numbuf[0] && numbuf[1] &&
-		 numbuf[2] && numbuf[3] &&
-		 numbuf[4]) ||
-		(numbuf[1] && numbuf[2] &&
-		 numbuf[3] && numbuf[4] &&
-		 numbuf[5]))
-	{
-		return 5;
-	}
-
-	if ((numbuf[0] && numbuf[1] &&
-		 numbuf[2] && numbuf[3]) ||
-		(numbuf[1] && numbuf[2] &&
-		 numbuf[3] && numbuf[4]) ||
-		(numbuf[2] && numbuf[3] &&
-		 numbuf[4] && numbuf[5]))
-	{
-		return 4;
-	}
-
-	return 0;
-}
-
-void recalcTVals(void)
-{
-	unsigned char row, die, sum;
-	unsigned char twoSame;
-	unsigned char threeSame;
-	unsigned char diceSum;
-
-	for (row = 0; row < 18; row++)
-	{
-		tvals[row] = 0;
-	}
-
-	// upper section
-	for (row = 0; row < 6; row++)
-	{
-		sum = 0;
-		for (die = 0; die < 5; die++)
-		{
-			if (dvalues[die] == (row + 1))
-			{
-				sum += dvalues[die];
-			}
-		}
-		tvals[row] = sum;
-	}
-
-	// lower section
-
-	diceSum = currentDiceSum();
-	tvals[15] = diceSum; // row 15 == chance
-
-	// row 14 == kniffel
-	if (checkSame(5))
-	{
-		tvals[14] = 50;
-		tvals[10] = diceSum;
-		tvals[9] = diceSum;
-	}
-	else
-	{
-		// row 10 == 4same
-		if (checkSame(4))
-		{
-			tvals[10] = diceSum;
-			tvals[9] = diceSum;
-		}
-		else
-		{
-			threeSame = checkSame(3);
-			twoSame = checkSame(2);
-			// row 9 == 3same
-			if (threeSame)
-			{
-				tvals[9] = diceSum;
-			}
-			// row 13 == full house
-			if (twoSame && threeSame && (threeSame != twoSame))
-			{
-				tvals[13] = 25;
-			}
-			if (!threeSame)
-			{
-				// row 12 = lg street
-				if (checkStreet() == 5)
-				{
-					tvals[12] = 40;
-					tvals[11] = 30;
-				}
-				else if (checkStreet() == 4)
-				{
-					// row 11 = sm street
-					tvals[11] = 30;
-				}
-			}
-		}
-	}
+	unsigned char row;
 
 	for (row = 0; row < 6; row++)
 	{
@@ -717,7 +572,7 @@ char shouldCommitRow(unsigned char row)
 	centerLower("wirklich? null punkte?!");
 	jn = cgetc();
 	clearLower();
-	return (jn=='j');
+	return (jn == 'j');
 }
 
 void commitRow(unsigned char row)
@@ -893,11 +748,13 @@ void mainloop()
 				shouldRoll[idx] = !shouldRoll[idx];
 				plotDice(idx, dvalues[idx], shouldRoll[idx]);
 			}
-			if (cmd==' ' && rollCount < MAX_ROLL_COUNT) {
+			if (cmd == ' ' && rollCount < MAX_ROLL_COUNT)
+			{
 				centerLower("katja-move!");
-				for (idx=0;idx<5;++idx) {
+				for (idx = 0; idx < 5; ++idx)
+				{
 					shouldRoll[idx] = TRUE;
-					plotDice(idx,dvalues[idx],shouldRoll[idx]);
+					plotDice(idx, dvalues[idx], shouldRoll[idx]);
 				}
 				clearLower();
 			}
