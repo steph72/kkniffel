@@ -30,9 +30,9 @@ char currentPlayer; // the current player
 
 int tvals[18]; // temporary table values (for wizard)
 
-void recalcTVals(void);		   // recalc temp values
+void recalcTVals(void); // recalc temp values
 void refreshTvalsDisplay(void);
-void removeTvalDisplay(void);  // remove tval display
+void removeTvalDisplay(void); // remove tval display
 
 unsigned char quit;
 unsigned char currentRound;
@@ -44,7 +44,6 @@ const char *rownames[] = {"einer", "zweier", "dreier", "vierer", "fuenfer",
 
 char numPlayers;
 char namelength;
-
 
 void clearLower(void)
 {
@@ -97,6 +96,14 @@ void plotDiceLegend(unsigned char flag)
 			cputc(' ');
 		}
 	}
+
+	/*  we need to place the cursor on an empty space
+	    after marking the dice keys in reverse
+	    due to a strange bug in the plus/4 conio, where 
+	    stopping reverse mode also resets the colour
+	    under the cursor...                             */
+
+	gotoxy(33, (i * 5) + 2);
 	revers(0);
 }
 
@@ -172,6 +179,18 @@ void doTurnRoll()
 	recalcTVals();
 	refreshTvalsDisplay();
 	clearbuf();
+	gotoxy(0, 24);
+	cprintf("t: ");
+	for (i = 0; i <= 5; ++i)
+	{
+		cprintf("%d", rerollDiceCountForRow(i));
+	}
+	cprintf("-");
+	for (i = 9; i <= 15; ++i)
+	{
+		cprintf("%d", rerollDiceCountForRow(i));
+	}
+	cprintf(">%d", determineUpperRerollRow());
 }
 
 void input(char *buf)
@@ -578,8 +597,26 @@ char shouldCommitRow(unsigned char row)
 
 void commitRow(unsigned char row)
 {
+	unsigned char i;
+	unsigned char rOn;
+	int t;
+
+	rOn = 0;
+
 	ktable[row][currentPlayer] = tvals[row];
-	displayTableEntry(currentPlayer, row, ktable[row][currentPlayer], 0);
+
+	for (i = 0; i < 6; ++i)
+	{
+		t = clock();
+		rOn = !rOn;
+		revers(rOn);
+		displayTableEntry(currentPlayer, row, ktable[row][currentPlayer], 0);
+		while ((clock() - t) < 5)
+		{
+			/* code */
+		}
+	}
+	revers(0);
 }
 
 void updateSums()

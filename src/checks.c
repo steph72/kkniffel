@@ -1,45 +1,38 @@
 
 #include "checks.h"
+#include <conio.h>
+#include <stdlib.h>
 
 extern unsigned char dvalues[5]; // dice values
 extern char numbuf[6];
 extern int tvals[18]; // temporary table values (for wizard)
 
+extern int ktable[18][4];  // main table
+extern char currentPlayer; // the current player
+
+int __fastcall__ dcompare(const void *_a, const void *_b);
+
 unsigned char checkStreet(void)
 {
-    unsigned char i;
+    char i;
+    char count;
 
-    for (i = 0; i < 6; i++)
+    for (i = 0; i < 5; ++i)
     {
-        numbuf[i] = 0;
+        numbuf[i] = dvalues[i];
     }
 
-    for (i = 0; i < 5; i++)
-    {
-        numbuf[dvalues[i] - 1]++;
-    }
+    qsort(numbuf, 5, sizeof(unsigned char), dcompare);
 
-    if ((numbuf[0] && numbuf[1] &&
-         numbuf[2] && numbuf[3] &&
-         numbuf[4]) ||
-        (numbuf[1] && numbuf[2] &&
-         numbuf[3] && numbuf[4] &&
-         numbuf[5]))
+    count = 0;
+    for (i = 0; i < 4; ++i)
     {
-        return 5;
+        if (numbuf[i + 1] == numbuf[i] + 1)
+        {
+            ++count;
+        }
     }
-
-    if ((numbuf[0] && numbuf[1] &&
-         numbuf[2] && numbuf[3]) ||
-        (numbuf[1] && numbuf[2] &&
-         numbuf[3] && numbuf[4]) ||
-        (numbuf[2] && numbuf[3] &&
-         numbuf[4] && numbuf[5]))
-    {
-        return 4;
-    }
-
-    return 0;
+    return count + 1;
 }
 
 unsigned char currentDiceSum(void)
@@ -75,6 +68,129 @@ unsigned char checkSame(unsigned char count)
         }
     }
     return FALSE;
+}
+
+unsigned char checkDiceCountWithDigit(unsigned char digit)
+{
+    unsigned char i;
+    unsigned char occurances = 0;
+    for (i = 0; i < 5; ++i)
+    {
+        if (dvalues[i] == digit)
+            occurances++;
+    }
+    return occurances;
+}
+
+unsigned char rerollDiceCountForRow(unsigned char row)
+{
+    int i;
+    signed char v;
+
+    if (row <= 5) // upper rows
+    {
+        return 5 - (checkDiceCountWithDigit(row + 1));
+    }
+
+    if (row == 9 || row == 10) // x same?
+    {
+        v = row - 6;
+
+        for (i = v; i > 0; i--)
+        {
+            if (checkSame(i))
+            {
+                return v - i;
+            }
+        }
+    }
+
+    if (row == 11) // sm. straight?
+    {
+        v = 4 - checkStreet();
+        if (v > 0)
+        {
+            return v;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    if (row == 12) // lg. straight?
+    {
+        v = 5 - checkStreet();
+        if (v > 0)
+        {
+            return v;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    if (row == 13) // full house
+    {
+
+        if (checkSame(3) && checkSame(2))
+        {
+            return 0;
+        }
+        else if (checkSame(3))
+        {
+            return 1;
+        }
+        else if (checkSame(2))
+        {
+            return 3;
+        }
+        else
+        {
+            return 3;
+        }
+    }
+
+    if (row == 14) // kniffel
+    {
+        for (i = 5; i > 0; i--)
+        {
+            if (checkSame(i))
+            {
+                return 5 - i;
+            }
+        }
+    }
+
+    return 0;
+}
+
+signed char determineUpperRerollRow(void)
+{
+    signed char row,i;
+    char min, test;
+    
+    min=255;
+    row=-1;
+
+    for (i = 5; i >= 0; --i)
+    {
+        if (ktable[i][currentPlayer] < 0)
+        {
+            cprintf("+");
+            test = rerollDiceCountForRow(i);
+            cprintf("%d",test);
+            if (test<=min) {
+                cprintf("m");
+                min = test;
+                row = i;
+            }
+        }
+    }
+
+    return row;
+
 }
 
 void recalcTVals(void)
