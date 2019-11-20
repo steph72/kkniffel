@@ -9,6 +9,7 @@
 
 # Space or comma separated list of cc65 supported target platforms to build for.
 # Default: c64 (lowercase!)
+#TARGETS := apple2
 TARGETS := c64, plus4, c128, pet
 
 # Name of the final, single-file executable.
@@ -35,7 +36,7 @@ ASFLAGS =
 
 # Additional linker flags and options.
 # Default: none
-LDFLAGS =
+LDFLAGS = 
 
 # Path to the directory containing C and ASM sources.
 # Default: src
