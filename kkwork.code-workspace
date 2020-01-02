@@ -3,5 +3,16 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"files.associations": {
+			"6502.h": "c",
+			"time.h": "c",
+			"checks.h": "c",
+			"string.h": "c",
+			"cx16.h": "c",
+			"chargen.h": "c",
+			"stdio.h": "c"
+		}
+	}
 }

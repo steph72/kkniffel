@@ -1,3 +1,26 @@
+/*
+
+	KKNIFFEL
+	by Stephan Kleinert
+
+	A yahtzee type game for various 8 bit computers... :)
+
+	--------------------------------------------------------------------
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+	*/
 
 #include <conio.h>
 #include <stdlib.h>
@@ -6,7 +29,8 @@
 #include <time.h>
 
 #include "io.h"
-#include "checks.h"
+#include "kcore.h"
+#include "cplayer.h"
 
 #define MAX_ROLL_COUNT 3
 
@@ -17,34 +41,23 @@
 // clang-format on
 
 char inbuf[40];
-char numbuf[6];
-char pnames[4][20];		  // player names
-unsigned char dvalues[5]; // dice values
-char shouldRoll[5];		  // dice roll flags
 
-int ktable[18][4];		 // main table
 int roundResults[10][4]; // results for postgame
 int totals[4];			 // totals per player for postgame
 
-char currentPlayer; // the current player
-
-int tvals[18]; // temporary table values (for wizard)
-
-void recalcTVals(void);		   // recalc temp values
 void refreshTvalsDisplay(void);
-void removeTvalDisplay(void);  // remove tval display
+void removeTvalDisplay(void); // remove tval display
 
 unsigned char quit;
 unsigned char currentRound;
 
-const char *rownames[] = {"einer", "zweier", "dreier", "vierer", "fuenfer",
-						  "sechser", "summe o", "bonus", "gesamt o", "3erpasch", "4erpasch",
-						  "kl. str", "gr. str", "f. house", "kniffel", "chance",
-						  "summe u", "gesamt"};
-
 char numPlayers;
 char namelength;
 
+unsigned int getJiffies()
+{
+	return clock();
+}
 
 void clearLower(void)
 {
@@ -73,13 +86,6 @@ void waitkey(char key)
 		;
 }
 
-void rollDice(unsigned char nr)
-{
-	dvalues[nr] = 1 + (rand() % 6);
-	if (dvalues[nr] < 5)
-		return;
-}
-
 void plotDiceLegend(unsigned char flag)
 {
 	unsigned char i;
@@ -97,18 +103,26 @@ void plotDiceLegend(unsigned char flag)
 			cputc(' ');
 		}
 	}
+
+	/*  we need to place the cursor on an empty space
+	    after marking the dice keys in reverse
+	    due to a strange bug in the plus/4 conio, where 
+	    stopping reverse mode also resets the colour
+	    under the cursor...                             */
+
+	gotoxy(33, (i * 5) + 2);
 	revers(0);
 }
 
 void doSingleRoll()
 {
 	unsigned char i;
+	kc_doSingleRoll();
 	for (i = 0; i < 5; ++i)
 	{
-		if (shouldRoll[i])
+		if (kc_getShouldRoll(i))
 		{
-			rollDice(i);
-			plotDice(i, dvalues[i], FALSE);
+			plotDice(i, kc_diceValue(i), false);
 		}
 	}
 }
@@ -118,7 +132,7 @@ void showCurrentRoll()
 	unsigned char i;
 	for (i = 0; i < 5; i++)
 	{
-		plotDice(i, dvalues[i], 0);
+		plotDice(i, kc_diceValue(i), kc_getShouldRoll(i));
 	}
 }
 
@@ -134,25 +148,6 @@ void eraseDice()
 	}
 }
 
-int __fastcall__ dcompare(const void *_a, const void *_b)
-{
-
-	unsigned char *a;
-	unsigned char *b;
-	a = (unsigned char *)_a;
-	b = (unsigned char *)_b;
-
-	if (*a < *b)
-	{
-		return -1;
-	}
-	else if (*a > *b)
-	{
-		return 1;
-	}
-	return 0;
-}
-
 void doTurnRoll()
 {
 	char i;
@@ -160,17 +155,29 @@ void doTurnRoll()
 	removeTvalDisplay();
 	showCurrentRoll();
 	clearbuf();
-	do
+	if (kc_getIsComputerPlayer(_currentPlayer))
 	{
-		doSingleRoll();
-	} while (kbhit() == 0);
+		for (i = 0; i < 20; ++i)
+		{
+			doSingleRoll();
+		}
+	}
+	else
+	{
+		centerLower("<return> = stop rolling");
+		do
+		{
+			doSingleRoll();
+		} while (kbhit() == 0);
+	}
 	doSingleRoll();
 	for (i = 0; i < 5; i++)
 	{
-		shouldRoll[i] = FALSE;
+		kc_setShouldRoll(i, false);
 	}
-	recalcTVals();
+	kc_recalcTVals();
 	refreshTvalsDisplay();
+	kc_newRoll();
 	clearbuf();
 }
 
@@ -233,23 +240,6 @@ char columnForPlayer(unsigned char p)
 	return (12 + (p * (namelength + 1)));
 }
 
-char rowForDataRow(unsigned char dataRow)
-{
-	if (dataRow <= 5)
-	{
-		return dataRow + 2;
-	}
-	if (dataRow >= 6 && dataRow <= 8)
-	{
-		return dataRow + 3;
-	}
-	if (dataRow >= 9 && dataRow <= 15)
-	{
-		return dataRow + 4;
-	}
-	return dataRow + 5;
-}
-
 void displayTableEntry(char player, char row, int value, char temp)
 {
 	char color;
@@ -271,7 +261,7 @@ void displayTableEntry(char player, char row, int value, char temp)
 	}
 	textcolor(color);
 	itoa(value, numbuf, 10);
-	gotoxy(columnForPlayer(player) + namelength - 2, rowForDataRow(row));
+	gotoxy(columnForPlayer(player) + namelength - 2, kc_rowForDataRow(row));
 	cputs("  ");
 	if (value == 0 && temp)
 	{
@@ -281,7 +271,7 @@ void displayTableEntry(char player, char row, int value, char temp)
 	{
 		return;
 	}
-	gotoxy(columnForPlayer(player) + namelength - strlen(numbuf), rowForDataRow(row));
+	gotoxy(columnForPlayer(player) + namelength - strlen(numbuf), kc_rowForDataRow(row));
 	cputs(numbuf);
 }
 
@@ -291,17 +281,17 @@ void refreshTvalsDisplay(void)
 
 	for (row = 0; row < 6; row++)
 	{
-		if (ktable[row][currentPlayer] == -1)
+		if (kc_tableValue(row, _currentPlayer, 0) == -1)
 		{
-			displayTableEntry(currentPlayer, row, tvals[row], 1);
+			displayTableEntry(_currentPlayer, row, tvals[row], 1);
 		}
 	}
 
 	for (row = 9; row < 16; row++)
 	{
-		if (ktable[row][currentPlayer] == -1)
+		if (kc_tableValue(row, _currentPlayer, 0) == -1)
 		{
-			displayTableEntry(currentPlayer, row, tvals[row], 1);
+			displayTableEntry(_currentPlayer, row, tvals[row], 1);
 		}
 	}
 }
@@ -311,16 +301,16 @@ void removeTvalDisplay()
 	char row;
 	for (row = 0; row < 6; ++row)
 	{
-		if (ktable[row][currentPlayer] == -1)
+		if (kc_tableValue(row, _currentPlayer, 0) == -1)
 		{
-			displayTableEntry(currentPlayer, row, 0, 1);
+			displayTableEntry(_currentPlayer, row, 0, 1);
 		}
 	}
 	for (row = 9; row < 16; ++row)
 	{
-		if (ktable[row][currentPlayer] == -1)
+		if (kc_tableValue(row, _currentPlayer, 0) == -1)
 		{
-			displayTableEntry(currentPlayer, row, 0, 1);
+			displayTableEntry(_currentPlayer, row, 0, 1);
 		}
 	}
 }
@@ -332,7 +322,7 @@ void updatePlayer(unsigned char row)
 	{
 		textcolor(colLegend);
 		gotoxy(columnForPlayer(i), row);
-		j = strlen(pnames[i]);
+		j = strlen(_pname[i]);
 		if (j > namelength)
 			j = namelength;
 		if (namelength - j >= 2)
@@ -342,11 +332,11 @@ void updatePlayer(unsigned char row)
 				cputc(' ');
 			}
 		}
-		if (i == currentPlayer && row == 0)
+		if (i == _currentPlayer && row == 0)
 			revers(1);
 		for (t = 0; t < j; t++)
 		{
-			cputc(pnames[i][t]);
+			cputc(_pname[i][t]);
 		}
 		revers(0);
 	}
@@ -405,7 +395,7 @@ void displayBoard()
 	// rows
 	for (i = 0; i < 18; i++)
 	{
-		gotoxy(0, rowForDataRow(i));
+		gotoxy(0, kc_rowForDataRow(i));
 		textcolor(colLegend);
 		if (i < 6)
 		{
@@ -426,28 +416,9 @@ void displayBoard()
 			cprintf("  ");
 		}
 		textcolor(textcolorForRow(i));
-		cprintf(rownames[i]);
+		cprintf(kc_labelForRow(i));
 	}
 	initDiceDisplay();
-}
-
-void gamePreflight()
-{
-
-	unsigned char i, j;
-
-	for (i = 0; i < 5; i++)
-	{
-		shouldRoll[i] = TRUE;
-		rollDice(i);
-	}
-	for (i = 0; i < 18; ++i)
-	{
-		for (j = 0; j < 4; ++j)
-		{
-			ktable[i][j] = -1;
-		}
-	}
 }
 
 void startgame()
@@ -456,43 +427,21 @@ void startgame()
 	char i;
 
 	clrscr();
-	revers(1);
 	textcolor(colSplash);
-	cputc(176);
-	for (i = 0; i < 38; ++i)
-		cputc(192);
-	cputc(174);
-	cputc(221);
-	textcolor(colSplashRed);
-	cprintf("k");
-	textcolor(colSplash);
-	cprintf("kniffel v2.2                         ");
-	cputc(221);
-	cputc(221);
-	cprintf("written by herr k. @ k-burg, 2019     ");
-	cputc(221);
-	cputc(221);
-	cprintf("                                      ");
-	cputc(221);
-	cputc(221);
-	cprintf("with special thanks to frau k.,       ");
-	cputc(221);
-	cputc(221);
-	cprintf("buba k., candor k. and the 7 turtles! ");
-	cputc(221);
-	cputc(173);
-	for (i = 0; i < 38; ++i)
-		cputc(192);
-	cputc(189);
-	revers(0);
-	clearLower();
+
+	cputs("### kkniffel v2.3 ###\r\n\r\n"
+		  "written by herr k. @ k-burg, 2019-20\r\n\r\n"
+		  "with special thanks to frau k.,\r\n"
+		  "buba k., candor k., and - of course -\r\n"
+		  "to the 7 turtles!\r\n");
+
 	do
 	{
 		gotoxy(0, 9);
 		cclear(39);
 		gotoxy(0, 9);
 		textcolor(colText);
-		cprintf("wieviele mitspieler (2-4)? ");
+		cprintf("# of players (2-4)? ");
 		input(inbuf);
 		numPlayers = atoi(inbuf);
 		if (numPlayers == 0)
@@ -503,63 +452,46 @@ void startgame()
 	} while (numPlayers < 2 || numPlayers > 4);
 
 	namelength = (21 / numPlayers) - 1;
+	cputsxy(0,20,"(add 'shift+z' to player name to\r\ncreate a computer player!)");
 
 	for (i = 0; i < numPlayers; i++)
 	{
-		gotoxy(0, 11 + i);
+		gotoxy(0, 12 + i);
 		do
 		{
-			cprintf("spieler %d name: ", i + 1);
+			cprintf("player %d name: ", i + 1);
 			input(inbuf);
 			if (strlen(inbuf) == 0)
 			{
 				if (i == 0)
 				{
-					cprintf("-> katja");
-					strcpy(inbuf, "katja");
+					cprintf("-> katja Z");
+					strcpy(inbuf, "katja Z");
 				}
 				if (i == 1)
 				{
-					cprintf("-> stephan");
-					strcpy(inbuf, "stephan");
+					cprintf("-> stephan Z");
+					strcpy(inbuf, "stephan Z");
 				}
 				if (i == 2)
 				{
-					cprintf("-> buba");
-					strcpy(inbuf, "buba");
+					cprintf("-> buba Z");
+					strcpy(inbuf, "buba Z");
 				}
 				if (i == 3)
 				{
-					cprintf("-> schnitzel");
-					strcpy(inbuf, "schnitzel");
+					cprintf("-> schnitzel Z");
+					strcpy(inbuf, "schnitzel Z");
 				}
 			}
 		} while (strlen(inbuf) == 0);
-		strcpy(pnames[i], inbuf);
+		if (strchr(inbuf, 'Z'))
+		{
+			cputs(" (cp) ");
+			kc_setIsComputerPlayer(i, true);
+		}
+		strcpy(_pname[i], inbuf);
 	}
-}
-
-char hasChosenRerollDice()
-{
-	unsigned char i;
-	unsigned char ret;
-	ret = 0;
-	for (i = 0; i < 5; i++)
-	{
-		ret += shouldRoll[i];
-	}
-	return ret;
-}
-
-void commitSort()
-{
-	unsigned char i;
-	qsort(dvalues, 5, sizeof(unsigned char), dcompare);
-	for (i = 0; i < 5; i++)
-	{
-		shouldRoll[i] = FALSE;
-	}
-	showCurrentRoll();
 }
 
 char shouldCommitRow(unsigned char row)
@@ -567,110 +499,80 @@ char shouldCommitRow(unsigned char row)
 	char jn;
 	if (tvals[row] > 0)
 	{
-		return TRUE;
+		return true;
 	}
 	clearLower();
-	centerLower("wirklich? null punkte?!");
+	centerLower("really? zero points (y/n)?!");
 	jn = cgetc();
 	clearLower();
-	return (jn == 'j');
+	return (jn == 'y');
 }
 
-void commitRow(unsigned char row)
+void updateSumDisplay()
 {
-	ktable[row][currentPlayer] = tvals[row];
-	displayTableEntry(currentPlayer, row, ktable[row][currentPlayer], 0);
+	displayTableEntry(_currentPlayer, 6, kc_tableValue(6, _currentPlayer, 0), 0);
+	displayTableEntry(_currentPlayer, 7, kc_tableValue(7, _currentPlayer, 0), 0);
+	displayTableEntry(_currentPlayer, 8, kc_tableValue(8, _currentPlayer, 0), 0);
+	displayTableEntry(_currentPlayer, 16, kc_tableValue(16, _currentPlayer, 0), 0);
+	displayTableEntry(_currentPlayer, 17, kc_tableValue(17, _currentPlayer, 0), 0);
 }
 
-void updateSums()
+void doNextPlayer()
 {
-	unsigned char i;
-	int upperSum;
-	int lowerSum;
-	int current;
-
-	upperSum = 0;
-	lowerSum = 0;
-
-	for (i = 0; i < 6; ++i)
-	{
-		current = ktable[i][currentPlayer];
-		if (current >= 0)
-		{
-			upperSum += current;
-		}
-	}
-
-	ktable[6][currentPlayer] = upperSum;
-
-	if (upperSum >= 63)
-	{
-		ktable[7][currentPlayer] = 35;
-		ktable[8][currentPlayer] = upperSum + 35;
-	}
-	else
-	{
-		ktable[7][currentPlayer] = -2;
-		ktable[8][currentPlayer] = upperSum;
-	}
-
-	for (i = 9; i < 16; i++)
-	{
-		current = ktable[i][currentPlayer];
-		if (current >= 0)
-		{
-			lowerSum += current;
-		}
-	}
-
-	ktable[16][currentPlayer] = lowerSum;
-	ktable[17][currentPlayer] = lowerSum + ktable[8][currentPlayer];
-
-	displayTableEntry(currentPlayer, 6, ktable[6][currentPlayer], 0);
-	displayTableEntry(currentPlayer, 7, ktable[7][currentPlayer], 0);
-	displayTableEntry(currentPlayer, 8, ktable[8][currentPlayer], 0);
-	displayTableEntry(currentPlayer, 16, ktable[16][currentPlayer], 0);
-	displayTableEntry(currentPlayer, 17, ktable[17][currentPlayer], 0);
-}
-
-void nextPlayer()
-{
-	unsigned char i;
-	for (i = 0; i < 5; i++)
-	{
-		shouldRoll[i] = TRUE;
-	}
-	++currentPlayer;
-	if (currentPlayer >= numPlayers)
-	{
-		currentPlayer = 0;
-	}
+	kc_newTurn();
 	updatePlayer(0);
 	eraseDice();
-	centerLower("<return> = wuerfeln");
 	gotoxy(0, 0);
 	cprintf("     ");
-	waitkey('\n');
+	if (!kc_getIsComputerPlayer(_currentPlayer))
+	{
+		centerLower("<return> = start rolling");
+		waitkey('\n');
+	}
 	doTurnRoll();
 }
 
 void checkQuit()
 {
+	quit = kc_checkQuit();
+}
+
+void commitRow(unsigned char row)
+{
 	unsigned char i;
-	unsigned char j;
-	unsigned char unfinishedEntries;
-	unfinishedEntries = 0;
-	for (j = 0; j < numPlayers; j++)
+	unsigned char rOn;
+	unsigned int t;
+
+	if (!kc_getIsComputerPlayer(_currentPlayer))
 	{
-		for (i = 0; i < 18; i++)
+		if (!shouldCommitRow(row))
 		{
-			if (ktable[i][j] == -1)
-			{
-				++unfinishedEntries;
-			}
+			return;
 		}
 	}
-	quit = (unfinishedEntries == 0);
+
+	rOn = 0;
+
+	kc_commitRow(row);
+	removeTvalDisplay();
+	updateSumDisplay();
+
+	for (i = 0; i < 6; ++i)
+	{
+		t = getJiffies();
+		rOn = !rOn;
+		revers(rOn);
+		displayTableEntry(_currentPlayer, row, kc_tableValue(row, _currentPlayer, 0), 0);
+		while ((getJiffies() - t) < 5)
+			;
+	}
+	revers(0);
+	checkQuit();
+
+	if (!quit)
+	{
+		doNextPlayer();
+	}
 }
 
 void postRound()
@@ -679,17 +581,17 @@ void postRound()
 	unsigned char j;
 	char jn;
 	clrscr();
-	cprintf("*** runde zuende! ***");
+	cprintf("*** round finished! ***");
 	updatePlayer(3);
 	for (j = 0; j < numPlayers; j++)
 	{
-		roundResults[currentRound][j] = ktable[17][j];
+		roundResults[currentRound][j] = kc_tableValue(17, j, 0);
 		totals[j] = 0;
 	}
 	for (i = 0; i <= currentRound; i++)
 	{
 		gotoxy(0, 5 + i);
-		cprintf("runde %d", i + 1);
+		cprintf("round %d", i + 1);
 		for (j = 0; j < numPlayers; j++)
 		{
 			gotoxy(columnForPlayer(j), 5 + i);
@@ -698,7 +600,7 @@ void postRound()
 		}
 	}
 	gotoxy(0, 7 + currentRound);
-	cputs("gesamt");
+	cputs("total");
 	for (j = 0; j < numPlayers; j++)
 	{
 		gotoxy(columnForPlayer(j), 5 + currentRound + 2);
@@ -706,92 +608,178 @@ void postRound()
 	}
 
 	gotoxy(0, 5 + currentRound + 5);
-	cputs("neue runde? (j/n)");
+	cputs("another round? (j/n)");
 	clearbuf();
 	jn = cgetc();
 	if (jn != 'n')
 	{
-		quit = FALSE;
+		quit = false;
 		currentRound++;
 	}
 	else
 	{
-		quit = TRUE;
+		quit = true;
 	}
 }
 
+void jiffySleep(int num)
+{
+	unsigned int t;
+	t = getJiffies();
+	while ((getJiffies() - t) < num)
+		;
+}
+
+void doCP()
+{
+	int exitVal = 0;
+
+	centerLower("thinking...");
+	cp_analyze();
+	jiffySleep(80);
+	gotoxy(0, 0);
+	clearLower();
+	if (kc_getRollCount() == 3)
+	{
+		exitVal = cp_exitRow();
+		commitRow(exitVal);
+	}
+	else
+	{
+		exitVal = cp_markDice();
+		showCurrentRoll();
+		jiffySleep(60);
+		if (exitVal >= 0)
+		{
+			commitRow(exitVal);
+			return;
+		}
+		else
+		{
+			doTurnRoll();
+		}
+	}
+}
+
+#ifdef DEBUG
+void debugSetRoll()
+{
+	int i;
+	char in;
+	for (i = 0; i < 5; i++)
+	{
+		kc_setShouldRoll(i, false);
+	}
+	for (i = 0; i < 5; ++i)
+	{
+		gotoxy(0, 24);
+		cprintf("give value for die %d ", i + 1);
+		in = cgetc() - '0';
+		if (in > 0 && in <= 6)
+		{
+			kc_setDiceValue(i, in);
+		}
+		showCurrentRoll();
+	}
+	gotoxy(0, 24);
+	cputs("                      ");
+	kc_recalcTVals();
+	refreshTvalsDisplay();
+	debugDumpChoices();
+}
+#endif
+
 void mainloop()
 {
-	unsigned char rollCount;
 	unsigned char cmd;
 	unsigned char idx;
 	currentRound = 0;
-	quit = FALSE;
+	quit = false;
 	startgame();
 	do
 	{
-		gamePreflight();
+		kc_initGame(numPlayers, 1);
 		displayBoard();
-		currentPlayer = numPlayers - 1;
-		rollCount = 1;
-		nextPlayer();
+		_currentPlayer = numPlayers; // doNextPlayer() goes to player 1
+		doNextPlayer();
 		do
 		{
 			gotoxy(0, 0);
 			textcolor(colCurrentRollIdx);
-			cprintf("(%d/%d)", rollCount, MAX_ROLL_COUNT);
-			plotDiceLegend(rollCount < MAX_ROLL_COUNT);
+			cprintf("(roll %d/%d)", kc_getRollCount(), MAX_ROLL_COUNT);
+			plotDiceLegend(kc_getRollCount() < MAX_ROLL_COUNT);
 			clearbuf();
-			cmd = cgetc();
-			if (cmd >= '1' && cmd <= '5' && rollCount < MAX_ROLL_COUNT)
+
+			if (kc_getIsComputerPlayer(_currentPlayer))
 			{
-				idx = cmd - 49;
-				shouldRoll[idx] = !shouldRoll[idx];
-				plotDice(idx, dvalues[idx], shouldRoll[idx]);
+				doCP();
 			}
-			if (cmd == ' ' && rollCount < MAX_ROLL_COUNT)
+			else
 			{
-				centerLower("katja-move!");
-				for (idx = 0; idx < 5; ++idx)
+
+				if (kc_getRollCount() < 3)
 				{
-					shouldRoll[idx] = TRUE;
-					plotDice(idx, dvalues[idx], shouldRoll[idx]);
+					centerLower("[a-m] or [1-5 + ret]");
 				}
-				clearLower();
-			}
-			if (cmd == '\n' && rollCount < MAX_ROLL_COUNT && hasChosenRerollDice())
-			{
-				doTurnRoll();
-				rollCount++;
-			}
-			if (cmd == 'q')
-				quit = TRUE;
-			if ((cmd >= 'a' && cmd <= 'f') || (cmd >= 'g' && cmd <= 'm'))
-			{
-				idx = cmd - 'a';
-				if (cmd >= 'g')
+				else
 				{
-					idx += 3;
+					centerLower("[a-m]");
 				}
-				if (ktable[idx][currentPlayer] == -1)
+
+				cmd = cgetc();
+#ifdef DEBUG
+				if (cmd == 'A')
 				{
-					if (shouldCommitRow(idx))
+					doCP();
+				}
+				if (cmd == 'D')
+				{
+					debugDumpChoices();
+				}
+				if (cmd == '#')
+				{
+					debugSetRoll();
+				}
+#endif
+				if (cmd >= '1' && cmd <= '5' && kc_getRollCount() < 3)
+				{
+					idx = cmd - 49;
+					kc_toggleShouldRoll(idx);
+					plotDice(idx, kc_diceValue(idx), kc_getShouldRoll(idx));
+				}
+				if (cmd == ' ' && kc_getRollCount() < 3)
+				{
+					centerLower("katja-move!");
+					for (idx = 0; idx < 5; ++idx)
 					{
-						removeTvalDisplay();
+						kc_setShouldRoll(idx, true);
+						plotDice(idx, kc_diceValue(idx), kc_getShouldRoll(idx));
+					}
+					clearLower();
+				}
+				if (cmd == '\n' && kc_canRoll())
+				{
+					doTurnRoll();
+				}
+				if (cmd == 'q')
+					quit = true;
+				if ((cmd >= 'a' && cmd <= 'f') || (cmd >= 'g' && cmd <= 'm'))
+				{
+					idx = cmd - 'a';
+					if (cmd >= 'g')
+					{
+						idx += 3;
+					}
+					if (kc_tableValue(idx, _currentPlayer, 0) == -1)
+					{
 						commitRow(idx);
-						updateSums();
-						rollCount = 1;
-						checkQuit();
-						if (!quit)
-						{
-							nextPlayer();
-						}
 					}
 				}
-			}
-			if (cmd == 's')
-			{
-				commitSort();
+				if (cmd == 's')
+				{
+					kc_commitSort();
+					showCurrentRoll();
+				}
 			}
 		} while (!quit);
 		postRound();
@@ -806,6 +794,7 @@ void splash()
 	textcolor(2);
 	gotoxy(12 + 8, 11);
 	cputc(211);
+	jiffySleep(23);
 	initIO();
 	clrscr();
 }
@@ -813,6 +802,7 @@ void splash()
 int main()
 {
 	splash();
+	srand(getJiffies());
 	mainloop();
 	return 0;
 }
