@@ -1,5 +1,12 @@
 /*
 
+	KKNIFFEL
+	by Stephan Kleinert
+
+	A yahtzee type game for various 8 bit computers... :)
+
+	--------------------------------------------------------------------
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -445,11 +452,11 @@ void startgame()
 	} while (numPlayers < 2 || numPlayers > 4);
 
 	namelength = (21 / numPlayers) - 1;
-	cputs("\r\n\r\n(add 'shift+z' to player name\r\nfor computer player!)\r\n\r\n");
+	cputsxy(0,20,"(add 'shift+z' to player name to\r\ncreate a computer player!)");
 
 	for (i = 0; i < numPlayers; i++)
 	{
-		gotoxy(0, 15 + i);
+		gotoxy(0, 12 + i);
 		do
 		{
 			cprintf("player %d name: ", i + 1);
@@ -478,9 +485,9 @@ void startgame()
 				}
 			}
 		} while (strlen(inbuf) == 0);
-		if (strchr(inbuf,'Z'))
+		if (strchr(inbuf, 'Z'))
 		{
-			cputs (" (cp) ");
+			cputs(" (cp) ");
 			kc_setIsComputerPlayer(i, true);
 		}
 		strcpy(_pname[i], inbuf);
@@ -574,7 +581,7 @@ void postRound()
 	unsigned char j;
 	char jn;
 	clrscr();
-	cprintf("*** runde zuende! ***");
+	cprintf("*** round finished! ***");
 	updatePlayer(3);
 	for (j = 0; j < numPlayers; j++)
 	{
@@ -601,7 +608,7 @@ void postRound()
 	}
 
 	gotoxy(0, 5 + currentRound + 5);
-	cputs("neue runde? (j/n)");
+	cputs("another round? (j/n)");
 	clearbuf();
 	jn = cgetc();
 	if (jn != 'n')
@@ -710,9 +717,12 @@ void mainloop()
 			else
 			{
 
-				if (kc_getRollCount() < 3) {
+				if (kc_getRollCount() < 3)
+				{
 					centerLower("[a-m] or [1-5 + ret]");
-				} else {
+				}
+				else
+				{
 					centerLower("[a-m]");
 				}
 
@@ -784,6 +794,7 @@ void splash()
 	textcolor(2);
 	gotoxy(12 + 8, 11);
 	cputc(211);
+	jiffySleep(23);
 	initIO();
 	clrscr();
 }
