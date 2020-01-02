@@ -26,7 +26,7 @@ const unsigned char colCurrentRollIdx = 8;
 #define screen (unsigned char *)0x8000u
 
 void sleep(int secs){
-
+    
 }
 
 void startup(void)

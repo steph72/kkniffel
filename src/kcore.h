@@ -6,7 +6,8 @@
 
 typedef unsigned char byte;
 
-typedef enum _kRow {
+typedef enum _kRow
+{
 	row_ones,
 	row_twos,
 	row_threes,
@@ -39,7 +40,7 @@ extern char _quit;
 extern char numbuf[6];
 
 /* initialize a new game */
-void kc_initGame(int numPlayers, int numRounds); 
+void kc_initGame(int numPlayers, int numRounds);
 
 void kc_recalcOverallScores(void);
 int kc_incrementAndGetSessionCount(void);
@@ -50,24 +51,24 @@ char kc_newRound(void);
 void kc_newTurn(void);
 void kc_newRoll(void);
 
-char kc_saveCurrentState(char *fname); 
+char kc_saveCurrentState(char *fname);
 char kc_loadCurrentState(char *fname);
 char kc_hasSavedState(char *fname);
 void kc_removeCurrentState(char *fname);
 
-char kc_checkQuit(void);		/* check if all fields set */
-char kc_canRoll(void);			/*       if can roll       */		
+char kc_checkQuit(void); /* check if all fields set */
+char kc_canRoll(void);   /*       if can roll       */
 
 byte kc_getRollCount(void);
 
-char* kc_currentPlayerName(void);
-char* kc_labelForRow(char rowIdx);
-byte  kc_diceValue(char diceIndex); 
-int   kc_tableValue(char row, char player, char round);
-int   kc_tempValue(char row);
+char *kc_currentPlayerName(void);
+char *kc_labelForRow(char rowIdx);
+byte kc_diceValue(char diceIndex);
+int kc_tableValue(char row, char player, char round);
+int kc_tempValue(char row);
 
 int kc_getWinner(void);
-char* kc_sortedPlayers(void);
+char *kc_sortedPlayers(void);
 
 char kc_getShouldRoll(unsigned char nr);
 void kc_toggleShouldRoll(unsigned char nr);
@@ -80,12 +81,18 @@ char kc_getIsComputerPlayer(int no);
 void kc_setIsComputerPlayer(int no, int isCP);
 
 void kc_commitSort(void);
-void kc_recalcTVals(void);			/* recalc temp values */
+void kc_recalcTVals(void); /* recalc temp values */
 
 void kc_commitRow(unsigned char row);
-void kc_debugFill(char num);
+
+char kc_rowForDataRow(unsigned char dataRow);
 
 unsigned char checkSame(char count);
 byte currentDiceSum(void);
+
+#ifdef DEBUG
+void kc_debugFill(char num);
+char kc_setDiceValue(char diceIndex, char diceValue);
+#endif
 
 #endif
