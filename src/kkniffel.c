@@ -451,7 +451,7 @@ void startgame()
 	revers(1);
 	centerLine(6, " *  k k n i f f e l  * ");
 	revers(0);
-	centerLine(8, "- version 2.23 -");
+	centerLine(8, "- version 2.31 -");
 	centerLine(10,"written by stephan kleinert");
 	centerLine(11,"at k-burg, bad honnef, 2019-2020");
 	centerLine(12,"with special thanks to frau k.,");
