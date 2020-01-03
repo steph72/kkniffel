@@ -523,7 +523,7 @@ void doNextPlayer()
 	updatePlayer(0);
 	eraseDice();
 	gotoxy(0, 0);
-	cprintf("     ");
+	cputs("          ");
 	if (!kc_getIsComputerPlayer(_currentPlayer))
 	{
 		centerLower("<return> = start rolling");
@@ -608,7 +608,7 @@ void postRound()
 	}
 
 	gotoxy(0, 5 + currentRound + 5);
-	cputs("another round? (j/n)");
+	cputs("another round? (y/n)");
 	clearbuf();
 	jn = cgetc();
 	if (jn != 'n')
