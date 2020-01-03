@@ -266,7 +266,7 @@ void displayTableEntry(char player, char row, int value, char temp)
 	else
 	{
 #if defined(__PET__)
-		revers(0);
+		revers(0);	// pet has no color
 #else
 		color = textcolorForRow(row);
 #endif
@@ -285,6 +285,7 @@ void displayTableEntry(char player, char row, int value, char temp)
 	}
 	gotoxy(columnForPlayer(player) + namelength - strlen(numbuf), kc_rowForDataRow(row));
 	cputs(numbuf);
+
 }
 
 void refreshTvalsDisplay(void)
