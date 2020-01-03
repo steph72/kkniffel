@@ -40,6 +40,12 @@
 #endif
 // clang-format on
 
+#ifdef __CX16__
+#define BOTTOMY 30
+#else
+#define BOTTOMY 25
+#endif
+
 char inbuf[40];
 
 int roundResults[10][4]; // results for postgame
@@ -63,6 +69,12 @@ void clearLower(void)
 {
 	gotoxy(0, 24);
 	cputs("                                  ");
+}
+
+void centerLine(char line, char *msg)
+{
+	gotoxy(20 - (strlen(msg) / 2), line);
+	cputs(msg);
 }
 
 void centerLower(char *msg)
@@ -423,36 +435,40 @@ void displayBoard()
 
 void startgame()
 {
-
 	char i;
 
-	clrscr();
 	textcolor(colSplash);
 
-	cputs("### kkniffel v2.3 ###\r\n\r\n"
-		  "written by herr k. @ k-burg, 2019-20\r\n\r\n"
-		  "with special thanks to frau k.,\r\n"
-		  "buba k., candor k., and - of course -\r\n"
-		  "to the 7 turtles!\r\n");
-
-	do
+	clrscr();
+	for (i = 0; i < 8; ++i)
 	{
-		gotoxy(0, 9);
-		cclear(39);
-		gotoxy(0, 9);
-		textcolor(colText);
-		cprintf("# of players (2-4)? ");
-		input(inbuf);
-		numPlayers = atoi(inbuf);
-		if (numPlayers == 0)
-		{
-			numPlayers = 4;
-			cprintf("-> 4");
-		}
-	} while (numPlayers < 2 || numPlayers > 4);
+		_plotDice(1 + (rand() % 6), i * 5, 0, 0);
+		_plotDice(1 + (rand() % 6), i * 5, BOTTOMY - 5, 0);
+	}
+
+	textcolor(colText);
+
+	revers(1);
+	centerLine(6, " *  k k n i f f e l  * ");
+	revers(0);
+	centerLine(8, "- version 2.23 -");
+	centerLine(10,"written by stephan kleinert");
+	centerLine(11,"at k-burg, bad honnef, 2019-2020");
+	centerLine(12,"with special thanks to frau k.,");
+	centerLine(13,"buba k., candor k. and of course");
+	centerLine(14,"to the 7 turtles.");
+	textcolor(colLowerSum);
+	centerLine(16,"how many players (2-4)?");
+	cursor(1);
+
+	while (numPlayers<2 || numPlayers>4) {
+		numPlayers = cgetc()-'0';
+	}
+
+	clrscr();
 
 	namelength = (21 / numPlayers) - 1;
-	cputsxy(0,20,"(add 'shift+z' to player name to\r\ncreate a computer player!)");
+	cputsxy(0, 20, "(add 'shift+z' to player name to\r\ncreate a computer player!)");
 
 	for (i = 0; i < numPlayers; i++)
 	{
@@ -492,6 +508,8 @@ void startgame()
 		}
 		strcpy(_pname[i], inbuf);
 	}
+
+	cursor(0);
 }
 
 char shouldCommitRow(unsigned char row)
@@ -789,10 +807,10 @@ void mainloop()
 void splash()
 {
 	startup();
-	gotoxy(12 + 0, 11);
+	gotoxy(0, 0);
 	cprintf("stephan   katja");
 	textcolor(2);
-	gotoxy(12 + 8, 11);
+	gotoxy(8, 0);
 	cputc(211);
 	jiffySleep(23);
 	initIO();

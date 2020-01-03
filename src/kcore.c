@@ -59,10 +59,10 @@ const char *rownames[] = {"einer", "zweier", "dreier",
 
 const char *rownames[] = {"aces", "twos", "threes",
 						  "fours", "fives", "sixes",
-						  "sum u", "bonus", "total",
+						  "sum up", "bonus", "total",
 						  "3ofakind", "4ofakind", "sm. str.", "lg. str.",
 						  "f. house", "yahtzee", "chance",
-						  "summe l", "total"};
+						  "sum low", "total"};
 
 #endif
 
