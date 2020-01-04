@@ -69,7 +69,14 @@ void analyzeUpperRows(void)
 			   		30 (6*5) + 50 + 30 = 120			
 			*/
 
-			scoreV = (possibleValue / (row + 1)) * 10;
+			if (cp_haveBonus)
+			{
+				scoreV = (possibleValue * 3)/2;
+			}
+			else
+			{
+				scoreV = (possibleValue / (row + 1)) * 10;
+			}
 
 			/* cannot roll & row not sufficient? rate low! */
 
