@@ -33,6 +33,7 @@
 #include "cplayer.h"
 
 #define MAX_ROLL_COUNT 3
+#define MAX_ROUNDS 20
 
 // clang-format off
 #if defined(__PET__)
@@ -48,8 +49,8 @@
 
 char inbuf[40];
 
-int roundResults[10][4]; // results for postgame
-int totals[4];			 // totals per player for postgame
+int roundResults[MAX_ROUNDS][4]; // results for postgame
+int totals[4];					 // totals per player for postgame
 
 void refreshTvalsDisplay(void);
 void removeTvalDisplay(void); // remove tval display
@@ -59,6 +60,13 @@ unsigned char currentRound;
 
 char numPlayers;
 char namelength;
+
+char benchmarkMode;
+
+int statTotal;
+int benchmarkRolls;
+int benchmarkRollsToDo;
+char numResults;
 
 unsigned int getJiffies()
 {
@@ -130,6 +138,8 @@ void doSingleRoll()
 {
 	unsigned char i;
 	kc_doSingleRoll();
+	if (benchmarkMode)
+		return;
 	for (i = 0; i < 5; ++i)
 	{
 		if (kc_getShouldRoll(i))
@@ -142,6 +152,10 @@ void doSingleRoll()
 void showCurrentRoll()
 {
 	unsigned char i;
+
+	if (benchmarkMode)
+		return;
+
 	for (i = 0; i < 5; i++)
 	{
 		plotDice(i, kc_diceValue(i), kc_getShouldRoll(i));
@@ -169,10 +183,11 @@ void doTurnRoll()
 	clearbuf();
 	if (kc_getIsComputerPlayer(_currentPlayer))
 	{
-		for (i = 0; i < 20; ++i)
-		{
-			doSingleRoll();
-		}
+		if (!benchmarkMode)
+			for (i = 0; i < 20; ++i)
+			{
+				doSingleRoll();
+			}
 	}
 	else
 	{
@@ -255,6 +270,7 @@ char columnForPlayer(unsigned char p)
 void displayTableEntry(char player, char row, int value, char temp)
 {
 	char color;
+
 	if (temp)
 	{
 #if defined(__PET__)
@@ -266,7 +282,7 @@ void displayTableEntry(char player, char row, int value, char temp)
 	else
 	{
 #if defined(__PET__)
-		revers(0);	// pet has no color
+		revers(0); // pet has no color
 #else
 		color = textcolorForRow(row);
 #endif
@@ -285,12 +301,14 @@ void displayTableEntry(char player, char row, int value, char temp)
 	}
 	gotoxy(columnForPlayer(player) + namelength - strlen(numbuf), kc_rowForDataRow(row));
 	cputs(numbuf);
-
 }
 
 void refreshTvalsDisplay(void)
 {
 	unsigned char row;
+
+	if (benchmarkMode)
+		return;
 
 	for (row = 0; row < 6; row++)
 	{
@@ -312,6 +330,10 @@ void refreshTvalsDisplay(void)
 void removeTvalDisplay()
 {
 	char row;
+
+	if (benchmarkMode)
+		return;
+
 	for (row = 0; row < 6; ++row)
 	{
 		if (kc_tableValue(row, _currentPlayer, 0) == -1)
@@ -360,6 +382,10 @@ void displayBoard()
 	unsigned char i;
 	unsigned char xmax;
 	unsigned char lineCol;
+
+	if (benchmarkMode)
+		return;
+
 	xmax = 11 + (numPlayers * (namelength + 1));
 	clrscr();
 	textcolor(colTable);
@@ -434,6 +460,32 @@ void displayBoard()
 	initDiceDisplay();
 }
 
+void startBenchmarkMode()
+{
+	char i;
+	unsigned int seed;
+	benchmarkMode = true;
+	numPlayers = 4;
+	namelength = 4;
+	benchmarkRolls = 0;
+	benchmarkRollsToDo = (4 * 13) * MAX_ROUNDS;
+	for (i = 0; i < 4; ++i)
+	{
+		kc_setIsComputerPlayer(i, true);
+		strcpy(_pname[i], "cp");
+	}
+	clrscr();
+	cputs("** benchmark mode **");
+	gotoxy(0, 3);
+	cputs("press alphanumeric key for\r\nrandom seed: ");
+	cursor(1);
+	seed = cgetc() * 555;
+	cprintf("-> %u\r\n", seed);
+	cursor(0);
+	cputs("\r\nrunnning kkniffelbench...");
+	srand(seed);
+}
+
 void startgame()
 {
 	char i;
@@ -453,21 +505,27 @@ void startgame()
 	centerLine(6, " *  k k n i f f e l  * ");
 	revers(0);
 	centerLine(8, "- version 2.31 -");
-	centerLine(10,"written by stephan kleinert");
-	centerLine(11,"at k-burg, bad honnef, 2019-2020");
-	centerLine(12,"with special thanks to frau k.,");
-	centerLine(13,"buba k., candor k. and of course");
-	centerLine(14,"to the 7 turtles.");
+	centerLine(10, "written by stephan kleinert");
+	centerLine(11, "at k-burg, bad honnef, 2019-2020");
+	centerLine(12, "with special thanks to frau k.,");
+	centerLine(13, "buba k., candor k. and of course");
+	centerLine(14, "to the 7 turtles.");
 	textcolor(colLowerSum);
-	centerLine(16,"how many players (2-4)?");
-	cursor(1);
+	centerLine(16, "how many players (2-4)?");
 
-	while (numPlayers<2 || numPlayers>4) {
-		numPlayers = cgetc()-'0';
+	while (numPlayers < 2 || numPlayers > 4)
+	{
+		cursor(1);
+		numPlayers = cgetc() - '0';
+		cursor(0);
+		if (numPlayers == 18)
+		{ // 'b' typed
+			startBenchmarkMode();
+			return;
+		}
 	}
 
 	clrscr();
-
 	namelength = (21 / numPlayers) - 1;
 	cputsxy(0, 20, "(add 'shift+z' to player name to\r\ncreate a computer player!)");
 
@@ -539,6 +597,9 @@ void updateSumDisplay()
 void doNextPlayer()
 {
 	kc_newTurn();
+	if (benchmarkMode)
+		return;
+
 	updatePlayer(0);
 	eraseDice();
 	gotoxy(0, 0);
@@ -573,19 +634,28 @@ void commitRow(unsigned char row)
 	rOn = 0;
 
 	kc_commitRow(row);
-	removeTvalDisplay();
-	updateSumDisplay();
 
-	for (i = 0; i < 6; ++i)
+	if (!benchmarkMode)
 	{
-		t = getJiffies();
-		rOn = !rOn;
-		revers(rOn);
-		displayTableEntry(_currentPlayer, row, kc_tableValue(row, _currentPlayer, 0), 0);
-		while ((getJiffies() - t) < 5)
-			;
+		removeTvalDisplay();
+		updateSumDisplay();
+		for (i = 0; i < 6; ++i)
+		{
+			t = getJiffies();
+			rOn = !rOn;
+			revers(rOn);
+			displayTableEntry(_currentPlayer, row, kc_tableValue(row, _currentPlayer, 0), 0);
+			while ((getJiffies() - t) < 5)
+				;
+		}
+		revers(0);
 	}
-	revers(0);
+	else
+	{
+		gotoxy(28, 0);
+		cprintf("[%d/%d]", ++benchmarkRolls, benchmarkRollsToDo);
+	}
+
 	checkQuit();
 
 	if (!quit)
@@ -598,13 +668,17 @@ void postRound()
 {
 	unsigned char i;
 	unsigned char j;
+	int res;
 	char jn;
 	clrscr();
 	cprintf("*** round finished! ***");
 	updatePlayer(3);
+	textcolor(colText);
 	for (j = 0; j < numPlayers; j++)
 	{
 		roundResults[currentRound][j] = kc_tableValue(17, j, 0);
+		statTotal += kc_tableValue(17, j, 0);
+		numResults++;
 		totals[j] = 0;
 	}
 	for (i = 0; i <= currentRound; i++)
@@ -613,31 +687,61 @@ void postRound()
 		cprintf("round %d", i + 1);
 		for (j = 0; j < numPlayers; j++)
 		{
+			res = roundResults[i][j];
+			if (res > 250)
+			{
+				textcolor(colLowerSum);
+			}
 			gotoxy(columnForPlayer(j), 5 + i);
-			cprintf("%d", roundResults[i][j]);
-			totals[j] = totals[j] + roundResults[i][j];
+			cprintf("%d", res);
+			totals[j] = totals[j] + res;
+			textcolor(colText);
 		}
 	}
 	gotoxy(0, 7 + currentRound);
-	cputs("total");
-	for (j = 0; j < numPlayers; j++)
-	{
-		gotoxy(columnForPlayer(j), 5 + currentRound + 2);
-		cprintf("%d", totals[j]);
-	}
 
-	gotoxy(0, 5 + currentRound + 5);
-	cputs("another round? (y/n)");
-	clearbuf();
-	jn = cgetc();
-	if (jn != 'n')
+	if (benchmarkMode)
 	{
-		quit = false;
-		currentRound++;
+		cprintf("\r\navg %d", statTotal / numResults);
 	}
 	else
 	{
-		quit = true;
+		cputs("total");
+		for (j = 0; j < numPlayers; j++)
+		{
+			gotoxy(columnForPlayer(j), 5 + currentRound + 2);
+			cprintf("%d", totals[j]);
+		}
+	}
+
+	gotoxy(0, 5 + currentRound + 5);
+
+	if (!benchmarkMode)
+	{
+		cputs("another round? (y/n)");
+		clearbuf();
+		jn = cgetc();
+		if (jn != 'n')
+		{
+			quit = false;
+			currentRound++;
+		}
+		else
+		{
+			quit = true;
+		}
+	}
+	else
+	{
+		if (currentRound < MAX_ROUNDS - 1)
+		{
+			currentRound++;
+			quit = false;
+		}
+		else
+		{
+			quit = true;
+		}
 	}
 }
 
@@ -653,11 +757,20 @@ void doCP()
 {
 	int exitVal = 0;
 
-	centerLower("thinking...");
+	if (!benchmarkMode)
+	{
+		centerLower("thinking...");
+	}
+
 	cp_analyze();
-	jiffySleep(80);
-	gotoxy(0, 0);
-	clearLower();
+
+	if (!benchmarkMode)
+	{
+		jiffySleep(80);
+		gotoxy(0, 0);
+		clearLower();
+	}
+
 	if (kc_getRollCount() == 3)
 	{
 		exitVal = cp_exitRow();
@@ -667,7 +780,8 @@ void doCP()
 	{
 		exitVal = cp_markDice();
 		showCurrentRoll();
-		jiffySleep(60);
+		if (!benchmarkMode)
+			jiffySleep(60);
 		if (exitVal >= 0)
 		{
 			commitRow(exitVal);
@@ -723,11 +837,14 @@ void mainloop()
 		doNextPlayer();
 		do
 		{
-			gotoxy(0, 0);
-			textcolor(colCurrentRollIdx);
-			cprintf("(roll %d/%d)", kc_getRollCount(), MAX_ROLL_COUNT);
-			plotDiceLegend(kc_getRollCount() < MAX_ROLL_COUNT);
-			clearbuf();
+			if (!benchmarkMode)
+			{
+				gotoxy(0, 0);
+				textcolor(colCurrentRollIdx);
+				cprintf("(roll %d/%d)", kc_getRollCount(), MAX_ROLL_COUNT);
+				plotDiceLegend(kc_getRollCount() < MAX_ROLL_COUNT);
+				clearbuf();
+			}
 
 			if (kc_getIsComputerPlayer(_currentPlayer))
 			{
@@ -808,6 +925,9 @@ void mainloop()
 void splash()
 {
 	startup();
+	benchmarkMode = false;
+	statTotal = 0;
+	numResults = 0;
 	gotoxy(0, 0);
 	cprintf("stephan   katja");
 	textcolor(2);

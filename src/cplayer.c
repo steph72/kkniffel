@@ -71,7 +71,7 @@ void analyzeUpperRows(void)
 
 			if (cp_haveBonus)
 			{
-				scoreV = (possibleValue * 3)/2;
+				scoreV = (possibleValue * 4) / 3;
 			}
 			else
 			{
@@ -116,11 +116,14 @@ void analyzeSameKind(void)
 	int currentValue;
 	int sameDiceValue;
 	int scoreV;
+	int possibleValue;
+
 	for (row = 9; row < 11; row++)
 	{
 		currentValue = currentValueForRow(row);
 		if (currentValue == -1)
 		{
+			possibleValue = tvals[row];
 			scoreV = 0;
 			for (dCountCheck = 2; dCountCheck <= 5; dCountCheck++)
 			{
@@ -128,14 +131,15 @@ void analyzeSameKind(void)
 				if (sameDiceValue)
 				{
 					scoreV = sameDiceValue * dCountCheck; /* *2 */
+					
 					if (row == 9 && dCountCheck >= 3)
 					{
-						scoreV += 10;
+						scoreV += 10 + (possibleValue);
 						break;
 					}
 					if (row == 10 && dCountCheck >= 4)
 					{
-						scoreV += 20;
+						scoreV += 20 + (possibleValue);
 						break;
 					}
 				}
@@ -206,8 +210,54 @@ void analyzeStraight(int row)
 	if (currentValue == -1)
 	{
 		consec = getConsecutiveDiceCount(&startElemPtr);
-		/* gotoxy(81,5);
-		printf("c/SE: %d/%d ",consec,*startElemPtr); */
+
+		if (row == row_sm_straight && consec >= 3)
+		{
+			if (kc_getRollCount() == 1)
+			{ // first roll?
+
+				if (checkSame(2) == 4 &&
+
+					(currentValueForRow(row_fours) == -1 ||
+					 currentValueForRow(row_3same) == -1 ||
+					 currentValueForRow(row_4same) == -1 ||
+					 currentValueForRow(row_kniffel) == -1)
+
+				)
+				{
+					cp_scoreForRowChoice[row] = 0;
+					return;
+				}
+
+				if (checkSame(2) == 1 &&
+
+					(currentValueForRow(row_ones) == -1 ||
+					 currentValueForRow(row_3same) == -1 ||
+					 currentValueForRow(row_4same) == -1 ||
+					 currentValueForRow(row_kniffel) == -1)
+
+				)
+				{
+					cp_scoreForRowChoice[row] = 0;
+					return;
+				}
+
+				if (checkSame(2) == 2 &&
+
+					(currentValueForRow(row_twos) == -1 ||
+					 currentValueForRow(row_3same) == -1 ||
+					 currentValueForRow(row_4same) == -1 ||
+					 currentValueForRow(row_kniffel) == -1)
+
+				)
+				{
+					cp_scoreForRowChoice[row] = 0;
+					return;
+				}
+
+			}
+		}
+
 		if (row == 11 && consec >= 3)
 		{
 			tempScore = 40;
@@ -283,6 +333,27 @@ void analyzeKniffel(int row)
 			if (i == 5)
 			{
 				cp_scoreForRowChoice[row] = 200;
+				if (tvals[row] == 30)
+				{
+					if (!cp_haveBonus && (currentValueForRow(row_sixes) < 0))
+					{
+						cp_scoreForRowChoice[row] = 0;
+					}
+				}
+				if (tvals[row] == 25)
+				{
+					if (!cp_haveBonus && (currentValueForRow(row_fives) < 0))
+					{
+						cp_scoreForRowChoice[row] = 0;
+					}
+				}
+				if (tvals[row] == 20)
+				{
+					if (!cp_haveBonus && (currentValueForRow(row_fours) < 0))
+					{
+						cp_scoreForRowChoice[row] = 0;
+					}
+				}
 				return;
 			}
 			score = 15 * i;
@@ -571,8 +642,7 @@ int cp_exitRow(void)
 			}
 			else
 			{
-				/* lower slot */
-				if (tvals[i] == 0 && i >= row_3same)
+				if (tvals[i] == 0 && i >= row_3same) /* lower slot */
 				{
 					lowerMod = i - row_3same;
 					if (i == row_full_house)
