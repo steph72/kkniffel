@@ -97,7 +97,7 @@ void analyzeUpperRows(void)
 
 				if (scoreV >= 30)
 				{ /* rate 'sufficient' rows higher */
-					scoreV += possibleValue;
+					// scoreV += possibleValue;
 					if (!cp_haveBonus)
 					{				  /* ...and even higher if */
 						scoreV += 30; /* there is no bonus yet */
@@ -131,7 +131,7 @@ void analyzeSameKind(void)
 				if (sameDiceValue)
 				{
 					scoreV = sameDiceValue * dCountCheck; /* *2 */
-					
+
 					if (row == 9 && dCountCheck >= 3)
 					{
 						scoreV += 10 + (possibleValue);
@@ -254,7 +254,6 @@ void analyzeStraight(int row)
 					cp_scoreForRowChoice[row] = 0;
 					return;
 				}
-
 			}
 		}
 
@@ -356,7 +355,7 @@ void analyzeKniffel(int row)
 				}
 				return;
 			}
-			score = 15 * i;
+			score = 16 * i;
 			score += (3 - kc_getRollCount()) * 10;
 			cp_scoreForRowChoice[row] = score;
 			return;
@@ -678,7 +677,7 @@ int cp_exitRow(void)
 	{
 		cp_scoreForRowChoice[0] = 10 + tvals[0];
 	}
-
+	
 	if (cp_scoreForRowChoice[1] == 5)
 	{
 		cp_scoreForRowChoice[1] = 8 + tvals[1];

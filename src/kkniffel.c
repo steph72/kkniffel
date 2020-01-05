@@ -482,7 +482,7 @@ void startBenchmarkMode()
 	seed = cgetc() * 555;
 	cprintf("-> %u\r\n", seed);
 	cursor(0);
-	cputs("\r\nrunnning kkniffelbench...");
+	cputs("\r\nrunning kkniffelbench...");
 	srand(seed);
 }
 
