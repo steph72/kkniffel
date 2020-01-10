@@ -12,7 +12,8 @@
 			"string.h": "c",
 			"cx16.h": "c",
 			"chargen.h": "c",
-			"stdio.h": "c"
+			"stdio.h": "c",
+			"conio.h": "c"
 		}
 	}
 }

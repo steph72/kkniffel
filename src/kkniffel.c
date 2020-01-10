@@ -42,16 +42,16 @@
 #endif
 // clang-format on
 
+#define BOTTOMY 24
+
 #ifdef __APPLE2__
+#undef BOTTOMY
 #define BOTTOMY 23
 #endif
 
-#ifdef __CBM__
 #ifdef __CX16__
+#undef BOTTOMY
 #define BOTTOMY 29
-#else
-#define BOTTOMY 24
-#endif
 #endif
 
 #ifdef __APPLE2__

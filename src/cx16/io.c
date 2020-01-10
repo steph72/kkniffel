@@ -64,7 +64,7 @@ void setDiceColor(unsigned char color)
     }
 }
 
-void __fastcall__ _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
+void _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
 {
     register unsigned int c;
     register unsigned int idx;
