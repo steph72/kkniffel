@@ -215,6 +215,7 @@ void eraseDice()
 void doTurnRoll()
 {
 	char i;
+	unsigned int j;
 	clearLower();
 	removeTvalDisplay();
 	showCurrentRoll();
@@ -222,10 +223,21 @@ void doTurnRoll()
 	if (kc_getIsComputerPlayer(_currentPlayer))
 	{
 		if (!benchmarkMode)
+
+		#ifndef __APPLE2__
+		j = getJiffies();
+		do {
+		#endif
+
 			for (i = 0; i < 20; ++i)
 			{
 				doSingleRoll();
 			}
+
+		#ifndef __APPLE2__ 
+		} while (getJiffies()-j<60);
+		#endif
+
 	}
 	else
 	{
