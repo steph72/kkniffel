@@ -23,6 +23,7 @@
 	*/
 
 #include <conio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <6502.h>
@@ -41,10 +42,24 @@
 #endif
 // clang-format on
 
+#ifdef __APPLE2__
+#define BOTTOMY 23
+#endif
+
+#ifdef __CBM__
 #ifdef __CX16__
-#define BOTTOMY 30
+#define BOTTOMY 29
 #else
-#define BOTTOMY 25
+#define BOTTOMY 24
+#endif
+#endif
+
+#ifdef __APPLE2__
+#define DELETEKEY 8
+#define RETURNKEY 13
+#else
+#define DELETEKEY 20
+#define RETURNKEY '\n'
 #endif
 
 char inbuf[40];
@@ -68,15 +83,25 @@ int benchmarkRolls;
 int benchmarkRollsToDo;
 char numResults;
 
+unsigned char g_xmax;
+
+void jiffySleep(int num);
+
+#ifndef __APPLE2__
 unsigned int getJiffies()
 {
 	return clock();
 }
+#endif
 
 void clearLower(void)
 {
-	gotoxy(0, 24);
+	gotoxy(0, BOTTOMY);
+#ifdef __APPLE2__
+	chline(g_xmax);
+#else
 	cputs("                                  ");
+#endif
 }
 
 void centerLine(char line, char *msg)
@@ -88,8 +113,14 @@ void centerLine(char line, char *msg)
 void centerLower(char *msg)
 {
 	clearLower();
-	gotoxy(17 - (strlen(msg) / 2), 24);
+	gotoxy((g_xmax/2) - (strlen(msg) / 2), BOTTOMY);
+	#ifdef __APPLE2__
+	revers(1);
+	#endif
 	cputs(msg);
+	#ifdef __APPLE2__
+	revers(0);
+	#endif
 	gotoxy(0, 0);
 }
 
@@ -106,6 +137,12 @@ void waitkey(char key)
 		;
 }
 
+#ifndef __APPLE2__
+#define DICELEGEND_POS 34
+#else
+#define DICELEGEND_POS 33
+#endif
+
 void plotDiceLegend(unsigned char flag)
 {
 	unsigned char i;
@@ -113,7 +150,7 @@ void plotDiceLegend(unsigned char flag)
 	revers(flag);
 	for (i = 0; i < 5; ++i)
 	{
-		gotoxy(34, (i * 5) + 2);
+		gotoxy(DICELEGEND_POS, (i * 5) + 2);
 		if (flag)
 		{
 			cputc('1' + i);
@@ -218,20 +255,20 @@ void input(char *buf)
 	do
 	{
 		currentChar = cgetc();
-		if (currentChar != '\n' && currentChar != 20)
+		if (currentChar != RETURNKEY && currentChar != DELETEKEY)
 		{
 			buf[currentPos] = currentChar;
 			cputc(currentChar);
 			currentPos++;
 		}
-		if (currentChar == 20 && currentPos > 0)
+		if (currentChar == DELETEKEY && currentPos > 0)
 		{
 			currentPos--;
 			gotox(wherex() - 1);
 			cputc(' ');
 			gotox(wherex() - 1);
 		}
-	} while (currentChar != '\n');
+	} while (currentChar != RETURNKEY);
 	buf[currentPos] = 0;
 	cursor(0);
 }
@@ -273,7 +310,7 @@ void displayTableEntry(char player, char row, int value, char temp)
 
 	if (temp)
 	{
-#if defined(__PET__)
+#if defined(__PET__) || defined(__APPLE2__)
 		revers(value > 0);
 #else
 		color = colTempValue;
@@ -281,11 +318,7 @@ void displayTableEntry(char player, char row, int value, char temp)
 	}
 	else
 	{
-#if defined(__PET__)
-		revers(0); // pet has no color
-#else
 		color = textcolorForRow(row);
-#endif
 	}
 	textcolor(color);
 	itoa(value, numbuf, 10);
@@ -380,32 +413,32 @@ void updatePlayer(unsigned char row)
 void displayBoard()
 {
 	unsigned char i;
-	unsigned char xmax;
 	unsigned char lineCol;
 
 	if (benchmarkMode)
 		return;
 
-	xmax = 11 + (numPlayers * (namelength + 1));
+	g_xmax = 11 + (numPlayers * (namelength + 1));
 	clrscr();
 	textcolor(colTable);
 	// horizontal lines
 	gotoxy(0, 1);
-	chline(xmax);
+	chline(g_xmax);
 	gotoxy(0, 8);
-	chline(xmax);
+	chline(g_xmax);
 	gotoxy(0, 12);
-	chline(xmax);
+	chline(g_xmax);
 	gotoxy(0, 20);
-	chline(xmax);
+	chline(g_xmax);
 	gotoxy(0, 23);
-	chline(xmax);
+	chline(g_xmax);
 	// player columns
 	for (i = 0; i < numPlayers; i++)
 	{
 		lineCol = columnForPlayer(i) - 1;
 		gotoxy(lineCol, 0);
 		cvline(23);
+#ifndef __APPLE2__
 		gotoxy(lineCol, 1);
 		cputc(123);
 		gotoxy(lineCol, 8);
@@ -416,19 +449,22 @@ void displayBoard()
 		cputc(123);
 		gotoxy(lineCol, 23);
 		cputc(241);
+#endif
 	}
-	gotoxy(xmax, 0);
+	gotoxy(g_xmax, 0);
 	cvline(23);
-	gotoxy(xmax, 1);
+#ifndef __APPLE2__
+	gotoxy(g_xmax, 1);
 	cputc(179);
-	gotoxy(xmax, 8);
+	gotoxy(g_xmax, 8);
 	cputc(179);
-	gotoxy(xmax, 12);
+	gotoxy(g_xmax, 12);
 	cputc(179);
-	gotoxy(xmax, 20);
+	gotoxy(g_xmax, 20);
 	cputc(179);
-	gotoxy(xmax, 23);
+	gotoxy(g_xmax, 23);
 	cputc(253);
+#endif
 
 	updatePlayer(0);
 	// rows
@@ -496,7 +532,7 @@ void startgame()
 	for (i = 0; i < 8; ++i)
 	{
 		_plotDice(1 + (rand() % 6), i * 5, 0, 0);
-		_plotDice(1 + (rand() % 6), i * 5, BOTTOMY - 5, 0);
+		_plotDice(1 + (rand() % 6), i * 5, BOTTOMY - 4, 0);
 	}
 
 	textcolor(colText);
@@ -504,7 +540,7 @@ void startgame()
 	revers(1);
 	centerLine(6, " *  k k n i f f e l  * ");
 	revers(0);
-	centerLine(8, "- version 2.31 -");
+	centerLine(8, "- version 2.4 -");
 	centerLine(10, "written by stephan kleinert");
 	centerLine(11, "at k-burg, bad honnef, 2019-2020");
 	centerLine(12, "with special thanks to frau k.,");
@@ -527,7 +563,7 @@ void startgame()
 
 	clrscr();
 	namelength = (21 / numPlayers) - 1;
-	cputsxy(0, 20, "(add 'shift+z' to player name to\r\ncreate a computer player!)");
+	cputsxy(0, 20, "(add '@' to player name to\r\ncreate a computer player!)");
 
 	for (i = 0; i < numPlayers; i++)
 	{
@@ -540,27 +576,27 @@ void startgame()
 			{
 				if (i == 0)
 				{
-					cprintf("-> katja Z");
-					strcpy(inbuf, "katja Z");
+					cprintf("-> katja @");
+					strcpy(inbuf, "katja @");
 				}
 				if (i == 1)
 				{
-					cprintf("-> stephan Z");
-					strcpy(inbuf, "stephan Z");
+					cprintf("-> stephan @");
+					strcpy(inbuf, "stephan @");
 				}
 				if (i == 2)
 				{
-					cprintf("-> buba Z");
-					strcpy(inbuf, "buba Z");
+					cprintf("-> buba @");
+					strcpy(inbuf, "buba @");
 				}
 				if (i == 3)
 				{
-					cprintf("-> schnitzel Z");
-					strcpy(inbuf, "schnitzel Z");
+					cprintf("-> schnitzel @");
+					strcpy(inbuf, "schnitzel @");
 				}
 			}
 		} while (strlen(inbuf) == 0);
-		if (strchr(inbuf, 'Z'))
+		if (strchr(inbuf, '@'))
 		{
 			cputs(" (cp) ");
 			kc_setIsComputerPlayer(i, true);
@@ -580,7 +616,7 @@ char shouldCommitRow(unsigned char row)
 	}
 	clearLower();
 	centerLower("really? zero points (y/n)?!");
-	jn = cgetc();
+	jn = tolower(cgetc());
 	clearLower();
 	return (jn == 'y');
 }
@@ -607,7 +643,7 @@ void doNextPlayer()
 	if (!kc_getIsComputerPlayer(_currentPlayer))
 	{
 		centerLower("<return> = start rolling");
-		waitkey('\n');
+		waitkey(RETURNKEY);
 	}
 	doTurnRoll();
 }
@@ -641,12 +677,10 @@ void commitRow(unsigned char row)
 		updateSumDisplay();
 		for (i = 0; i < 6; ++i)
 		{
-			t = getJiffies();
 			rOn = !rOn;
 			revers(rOn);
 			displayTableEntry(_currentPlayer, row, kc_tableValue(row, _currentPlayer, 0), 0);
-			while ((getJiffies() - t) < 5)
-				;
+			jiffySleep(5);
 		}
 		revers(0);
 	}
@@ -718,9 +752,9 @@ void postRound()
 
 	if (!benchmarkMode)
 	{
-		cputs("another round? (y/n)");
+		cputs("another game? (y/n)");
 		clearbuf();
-		jn = cgetc();
+		jn = tolower(cgetc());
 		if (jn != 'n')
 		{
 			quit = false;
@@ -745,13 +779,16 @@ void postRound()
 	}
 }
 
+#ifndef __APPLE2__
 void jiffySleep(int num)
 {
 	unsigned int t;
+
 	t = getJiffies();
 	while ((getJiffies() - t) < num)
 		;
 }
+#endif
 
 void doCP()
 {
@@ -862,7 +899,7 @@ void mainloop()
 					centerLower("[a-m]");
 				}
 
-				cmd = cgetc();
+				cmd = tolower(cgetc());
 #ifdef DEBUG
 				if (cmd == 'A')
 				{
@@ -877,6 +914,7 @@ void mainloop()
 					debugSetRoll();
 				}
 #endif
+
 				if (cmd >= '1' && cmd <= '5' && kc_getRollCount() < 3)
 				{
 					idx = cmd - 49;
@@ -893,7 +931,7 @@ void mainloop()
 					}
 					clearLower();
 				}
-				if (cmd == '\n' && kc_canRoll())
+				if (cmd == RETURNKEY && kc_canRoll())
 				{
 					doTurnRoll();
 				}
@@ -929,10 +967,14 @@ void splash()
 	statTotal = 0;
 	numResults = 0;
 	gotoxy(0, 0);
-	cprintf("stephan   katja");
+#ifdef __cbm__
+	cputs("stephan   katja");
 	textcolor(2);
 	gotoxy(8, 0);
 	cputc(211);
+#else
+	cputs("stephan <3 katja");
+#endif
 	jiffySleep(23);
 	initIO();
 	clrscr();
@@ -941,7 +983,9 @@ void splash()
 int main()
 {
 	splash();
+#ifndef __APPLE2__
 	srand(getJiffies());
+#endif
 	mainloop();
 	return 0;
 }

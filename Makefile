@@ -9,8 +9,8 @@
 
 # Space or comma separated list of cc65 supported target platforms to build for.
 # Default: c64 (lowercase!)
-#TARGETS := apple2
-TARGETS := c64, plus4, c128, pet, cx16
+TARGETS := apple2
+#TARGETS := c64, plus4, c128, pet, cx16, apple2
 
 # Name of the final, single-file executable.
 # Default: name of the current dir with target name appended
@@ -58,7 +58,7 @@ EMUCMD :=
 #PREEMUCMD := osascript -e "tell application \"X11\" to activate"
 #POSTEMUCMD := osascript -e "tell application \"System Events\" to tell process \"X11\" to set visible to false"
 #POSTEMUCMD := osascript -e "tell application \"Terminal\" to activate"
-PREEMUCMD := /bin/bash buildDisc.sh
+PREEMUCMD := /bin/bash deploy_apple2.sh
 POSTEMUCMD :=
 
 # On Windows machines VICE emulators may not be available in the PATH by default.

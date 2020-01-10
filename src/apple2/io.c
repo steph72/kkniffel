@@ -21,17 +21,29 @@ const unsigned char colOddValue = 13;  // odd row roll: light green
 const unsigned char colUpperSum = 4;   // upper sum
 const unsigned char colLowerSum = 3;   // lower sum
 const unsigned char colBonus = 2;      // bonus
-const unsigned char colCurrentRollIdx = 8; 
+const unsigned char colCurrentRollIdx = 8;
 
-#define screen (unsigned char *)0x8000u
+int gDelayTicks;
 
-void sleep(int secs){
-    
+extern const char *a2dice[6];
+
+void jiffySleep(int num)
+{
+	unsigned int t;
+
+	for (t = 0; t < gDelayTicks * num; ++t)
+		;
+
 }
 
 void startup(void)
 {
     clrscr();
+    gDelayTicks=30;
+    if (get_ostype()>=APPLE_IIGS) {
+        cputsxy(0,20,"cortland detected");
+        gDelayTicks=72;
+    }
 }
 
 void initIO(void)
@@ -39,48 +51,44 @@ void initIO(void)
     // TODO
 }
 
-void initDiceDisplay() {
+void initDiceDisplay()
+{
     // nothing to be done on PET
 }
 
 void __fastcall__ _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
 {
-    register unsigned char c;
-    register unsigned char idx;
 
-    unsigned char *row1, *row2, *row3, *row4, *row5;
-    idx = value - 1;
-    if (r)
-        r = 128;
-
-    row1 = (unsigned char *)screen + x + (40 * y);
-    row2 = (unsigned char *)row1 + 40;
-    row3 = (unsigned char *)row2 + 40;
-    row4 = (unsigned char *)row3 + 40;
-    row5 = (unsigned char *)row4 + 40;
+    register unsigned xc;
+    register unsigned yc;
+    unsigned char idx;
+    const char *dicePointer;
+    char charIdx = 0;
 
     if (value == 0)
     {
-        for (c = 0; c < 5; ++c)
+        for (yc = 0; yc < 3; ++yc)
         {
-            row1[c] = 32;
-            row2[c] = 32;
-            row3[c] = 32;
-            row4[c] = 32;
-            row5[c] = 32;
+            cputsxy(x, y + yc, "   ");
         }
+        return;
     }
-    else
+
+    idx = value - 1;
+    dicePointer = a2dice[idx];
+
+    revers(!r);
+
+    for (yc = 0; yc < 3; yc++)
     {
-        for (c = 0; c < 5; ++c)
+        for (xc = 0; xc < 3; xc++)
         {
-            row1[c] = r + dice[idx][c];
-            row2[c] = r + dice[idx][c + 5];
-            row3[c] = r + dice[idx][c + 10];
-            row4[c] = r + dice[idx][c + 15];
-            row5[c] = r + dice[idx][c + 20];
+            gotoxy(x + xc, y + yc);
+            cputc(dicePointer[charIdx++]);
         }
     }
+
+    revers(0);
 }
 
 void plotDice(unsigned char nr, unsigned char value, char revers)
