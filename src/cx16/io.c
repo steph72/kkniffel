@@ -55,9 +55,9 @@ void initDiceDisplay(void)
 void setDiceColor(unsigned char color)
 {
     unsigned int x, y;
-    for (y = 0; y <= 24; ++y)
+    for (y = 24; y <= 30; ++y)
     {
-        for (x = 35; x < 40; ++x)
+        for (x = 0; x < 40; ++x)
         {
             vpoke (color,((x*2)+1 + (256 * y)));
         }
@@ -110,10 +110,31 @@ void _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
 
 void plotDice(unsigned char nr, unsigned char value, char revers)
 {
-    _plotDice(value, 35, nr * 5, revers);
+    _plotDice(value, 3+nr*7, 24, revers);
 }
 
 void eraseDie(unsigned char nr)
 {
-    _plotDice(0, 35, nr * 5, 0);
+    _plotDice(0, 3+nr*7, 24, 0);
+}
+
+void plotDiceLegend(unsigned char flag)
+{
+	unsigned char i;
+	textcolor(colLegend);
+	revers(flag);
+	for (i = 0; i < 5; ++i)
+	{
+		gotoxy(2+(i*7), 26);
+		if (flag)
+		{
+			cputc('1' + i);
+		}
+		else
+		{
+			cputc(' ');
+		}
+	}
+
+	revers(0);
 }

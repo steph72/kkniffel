@@ -69,6 +69,7 @@ int totals[4];					 // totals per player for postgame
 
 void refreshTvalsDisplay(void);
 void removeTvalDisplay(void); // remove tval display
+void plotDiceLegend(unsigned char flag);
 
 unsigned char quit;
 unsigned char currentRound;
@@ -113,14 +114,14 @@ void centerLine(char line, char *msg)
 void centerLower(char *msg)
 {
 	clearLower();
-	gotoxy((g_xmax/2) - (strlen(msg) / 2), BOTTOMY);
-	#ifdef __APPLE2__
+	gotoxy((g_xmax / 2) - (strlen(msg) / 2), BOTTOMY);
+#ifdef __APPLE2__
 	revers(1);
-	#endif
+#endif
 	cputs(msg);
-	#ifdef __APPLE2__
+#ifdef __APPLE2__
 	revers(0);
-	#endif
+#endif
 	gotoxy(0, 0);
 }
 
@@ -143,6 +144,7 @@ void waitkey(char key)
 #define DICELEGEND_POS 33
 #endif
 
+#ifndef __CX16__
 void plotDiceLegend(unsigned char flag)
 {
 	unsigned char i;
@@ -170,6 +172,7 @@ void plotDiceLegend(unsigned char flag)
 	gotoxy(33, (i * 5) + 2);
 	revers(0);
 }
+#endif
 
 void doSingleRoll()
 {
@@ -206,8 +209,6 @@ void eraseDice()
 	for (i = 0; i < 5; i++)
 	{
 		eraseDie(i);
-		gotoxy(34, (i * 5) + 2);
-		cputc(' ');
 	}
 }
 
@@ -419,6 +420,7 @@ void displayBoard()
 		return;
 
 	g_xmax = 11 + (numPlayers * (namelength + 1));
+
 	clrscr();
 	textcolor(colTable);
 	// horizontal lines
@@ -562,7 +564,16 @@ void startgame()
 	}
 
 	clrscr();
-	namelength = (21 / numPlayers) - 1;
+
+#ifdef __CX16__
+#define TABLE_WIDTH 27
+#else
+#define TABLE_WIDTH 21
+#endif
+
+	namelength = (TABLE_WIDTH / numPlayers) - 1;
+	namelength = (TABLE_WIDTH / numPlayers) - 1;
+
 	cputsxy(0, 20, "(add '@' to player name to\r\ncreate a computer player!)");
 
 	for (i = 0; i < numPlayers; i++)
