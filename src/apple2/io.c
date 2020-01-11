@@ -48,7 +48,7 @@ void startup(void)
 
 void initIO(void)
 {
-    // TODO
+    // nothing to be done on Apple2
 }
 
 void initDiceDisplay()
