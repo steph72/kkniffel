@@ -224,20 +224,20 @@ void doTurnRoll()
 	{
 		if (!benchmarkMode)
 
-		#ifndef __APPLE2__
-		j = getJiffies();
-		do {
-		#endif
+#ifndef __APPLE2__
+			j = getJiffies();
+		do
+		{
+#endif
 
 			for (i = 0; i < 20; ++i)
 			{
 				doSingleRoll();
 			}
 
-		#ifndef __APPLE2__ 
-		} while (getJiffies()-j<60);
-		#endif
-
+#ifndef __APPLE2__
+		} while (getJiffies() - j < 60);
+#endif
 	}
 	else
 	{
@@ -536,11 +536,10 @@ void startBenchmarkMode()
 	srand(seed);
 }
 
-void startgame()
+void bannerDice()
 {
 	char i;
-
-	textcolor(colSplash);
+	textcolor(colDice);
 
 	clrscr();
 	for (i = 0; i < 8; ++i)
@@ -548,32 +547,84 @@ void startgame()
 		_plotDice(1 + (rand() % 6), i * 5, 0, 0);
 		_plotDice(1 + (rand() % 6), i * 5, BOTTOMY - 4, 0);
 	}
+}
 
+void displayCredits()
+{
+	bannerDice();
 	textcolor(colText);
-
 	revers(1);
-	centerLine(6, " *  k k n i f f e l  * ");
+	centerLine(7, " * k k n i f f e l * ");
 	revers(0);
-	centerLine(8, "- version 2.4 -");
-	centerLine(10, "written by stephan kleinert");
-	centerLine(11, "at k-burg, bad honnef, 2019-2020");
-	centerLine(12, "with special thanks to frau k.,");
-	centerLine(13, "buba k., candor k. and of course");
-	centerLine(14, "to the 7 turtles.");
-	textcolor(colLowerSum);
-	centerLine(16, "how many players (2-4)?");
+	centerLine(9, "written by stephan kleinert");
+	centerLine(10, "at k-burg, bad honnef and");
+	centerLine(11, "at hundehaus im reinhardswald");
+	centerLine(12, "2019/20");
+	centerLine(14, "with very special thanks to");
+	centerLine(15, "frau k., buba k. candor k.");
+	centerLine(16, "and the seven turtles!");
+	centerLine(18, "-- key --");
+	cgetc();
+}
 
-	while (numPlayers < 2 || numPlayers > 4)
+void displayInstructions()
+{
+	bannerDice();
+	textcolor(colText);
+	revers(1);
+	centerLine(7, " * instructions * ");
+	revers(0);
+	centerLine(9, "game keys:");
+	centerLine(11, "<return> to roll or reroll the dice");
+	centerLine(13, "<1-6> to select dice to reroll");
+	centerLine(14, "<a-m> to choose category to score");
+	centerLine(16, "<s> to sort the dice");
+	centerLine(18, "-- key --");
+	cgetc();
+}
+
+void startgame()
+{
+	char i;
+	char c;
+	char promptTopRow;
+
+	promptTopRow = (BOTTOMY / 2) - 5;
+
+	do
 	{
+		bannerDice();
+		textcolor(colText);
+
+		revers(1);
+		centerLine(promptTopRow, (char *)gTitle);
+		revers(0);
+		centerLine(promptTopRow + 2, "- version 2.32 -");
+		centerLine(promptTopRow + 3, "written by stephan kleinert");
+		textcolor(colBonus);
+		centerLine(promptTopRow + 8, "or type 'i' for instructions");
+		centerLine(promptTopRow + 9, "or 'c' for credits");
+		textcolor(colLowerSum);
+		centerLine(promptTopRow + 6, "how many players (2-4)?");
+
 		cursor(1);
-		numPlayers = cgetc() - '0';
+		c = cgetc();
+		numPlayers = c - '0';
 		cursor(0);
-		if (numPlayers == 18)
-		{ // 'b' typed
+		if (c == 'i')
+		{
+			displayInstructions();
+		}
+		else if (c == 'c')
+		{
+			displayCredits();
+		}
+		else if (c == '#')
+		{
 			startBenchmarkMode();
 			return;
 		}
-	}
+	} while (numPlayers < 2 || numPlayers > 4);
 
 	clrscr();
 

@@ -8,6 +8,8 @@
 #define screen 0
 #define COLOR_RAM 2048
 
+const char *gTitle = " * kkniffel/cx16 * ";
+
 void installCharset(void);
 void setDiceColor(unsigned char color);
 
@@ -17,6 +19,8 @@ const unsigned char colText = 5;
 
 const unsigned char colSplash = COLOR_GREEN;
 const unsigned char colSplashRed = COLOR_ORANGE;
+
+const unsigned char colDice = COLOR_ORANGE;
 
 const unsigned char colTempValue = COLOR_GRAY2; // temporary roll:
 const unsigned char colEvenValue = COLOR_GREEN;  // even row roll: green

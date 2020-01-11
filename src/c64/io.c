@@ -14,6 +14,8 @@
 #define screen (unsigned char *)51200u
 #define screenP (unsigned char *)648u // screen pointer for kernel
 
+const char *gTitle = " * kkniffel/c64 * ";
+
 void installCharset(void);
 void setDiceColor(unsigned char color);
 
@@ -23,6 +25,9 @@ const unsigned char colText = 5;
 
 const unsigned char colSplash = 4;
 const unsigned char colSplashRed = 2;
+
+const unsigned char colDice = COLOR_ORANGE;
+
 
 const unsigned char colTempValue = 11; // temporary roll:
 const unsigned char colEvenValue = 5;  // even row roll: green

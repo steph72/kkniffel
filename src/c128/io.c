@@ -8,12 +8,17 @@
 #include "../io.h"
 #include "../chargen.h"
 
+const char *gTitle = " * kkniffel/c128 * ";
+
 const unsigned char colTable = 5;
 const unsigned char colLegend = 14;
 
 const unsigned char colBackground = 0;
 const unsigned char colBorder = 0;
 const unsigned char colText = 5;
+
+const unsigned char colDice = COLOR_ORANGE;
+
 
 const unsigned char colSplash = 4;
 const unsigned char colSplashRed = 2;
@@ -40,15 +45,6 @@ void startup(void)
     clrscr();
 }
 
-void initIO(void)
-{
-    // TODO
-}
-
-void initDiceDisplay(void)
-{
-    setDiceColor(COLOR_ORANGE);
-}
 
 void setDiceColor(unsigned char color)
 {
@@ -60,6 +56,16 @@ void setDiceColor(unsigned char color)
                 *(COLOR_RAM + x + (40 * y)) = color;
         }
     }
+}
+
+void initIO(void)
+{
+    // TODO
+}
+
+void initDiceDisplay(void)
+{
+    setDiceColor(COLOR_ORANGE);
 }
 
 void __fastcall__ _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)

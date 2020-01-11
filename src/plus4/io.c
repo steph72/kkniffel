@@ -7,12 +7,18 @@
 #include "../io.h"
 #include "../chargen.h"
 
+const char *gTitle = " * kkniffel/ted * ";
+
+
 const unsigned char colBackground = BCOLOR_BLACK;
 const unsigned char colBorder = BCOLOR_BLACK;
 const unsigned char colText = BCOLOR_BLUEGREEN + CATTR_LUMA4;
 
 const unsigned char colSplash = BCOLOR_PURPLE + CATTR_LUMA3;
 const unsigned char colSplashRed = BCOLOR_RED + CATTR_LUMA3;
+
+const unsigned char colDice = COLOR_ORANGE;
+
 
 const unsigned char colTable = BCOLOR_CYAN + CATTR_LUMA0;
 const unsigned char colLegend = BCOLOR_LIGHTBLUE + CATTR_LUMA3;

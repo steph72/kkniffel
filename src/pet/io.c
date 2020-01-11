@@ -5,6 +5,8 @@
 #include "../io.h"
 #include "../chargen.h"
 
+const char *gTitle = " * kkniffel/pet * ";
+
 const unsigned char colTable = 5;
 const unsigned char colLegend = 14;
 

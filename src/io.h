@@ -8,11 +8,14 @@ void eraseDie(unsigned char nr);
 
 void initDiceDisplay(void);
 
+extern const char *gTitle;
 extern const char dice[6][25];
 
 extern const unsigned char colBackground;
 extern const unsigned char colBorder;
 extern const unsigned char colText;
+
+extern const unsigned char colDice;
 
 extern const unsigned char colSplash;
 extern const unsigned char colSplashRed;
