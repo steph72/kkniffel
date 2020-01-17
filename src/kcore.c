@@ -633,6 +633,23 @@ char kc_getShouldRoll(unsigned char nr)
 	return shouldRoll[nr];
 }
 
+char kc_getNumTurnsForPlayer(unsigned char playerIdx)
+{
+	unsigned char numTurns = 0;
+	unsigned char i;
+
+	for (i = 0; i < 18; i++)
+	{
+		if (i < row_upper_sum || (i >= row_threes && i < row_lower_sum))
+		{
+			if (ktable[i][playerIdx][_currentRound] != -1)
+			{
+				++numTurns;
+			}
+		}
+	}
+}
+
 void kc_doSingleRoll()
 {
 	unsigned char i;

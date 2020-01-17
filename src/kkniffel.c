@@ -554,16 +554,16 @@ void displayCredits()
 	bannerDice();
 	textcolor(colText);
 	revers(1);
-	centerLine(7, " * k k n i f f e l * ");
+	centerLine(5, " * k k n i f f e l * ");
 	revers(0);
-	centerLine(9, "written by stephan kleinert");
-	centerLine(10, "at k-burg, bad honnef and");
-	centerLine(11, "at hundehaus im reinhardswald");
-	centerLine(12, "2019/20");
-	centerLine(14, "with very special thanks to");
-	centerLine(15, "frau k., buba k. candor k.");
-	centerLine(16, "and the seven turtles!");
-	centerLine(18, "-- key --");
+	centerLine(7, "written by stephan kleinert");
+	centerLine(8, "at k-burg, bad honnef and");
+	centerLine(9, "at hundehaus im reinhardswald");
+	centerLine(10, "2019/20");
+	centerLine(12, "with very special thanks to");
+	centerLine(13, "frau k., buba k. candor k.");
+	centerLine(14, "and the seven turtles!");
+	centerLine(16, "-- key --");
 	cgetc();
 }
 
@@ -572,14 +572,14 @@ void displayInstructions()
 	bannerDice();
 	textcolor(colText);
 	revers(1);
-	centerLine(7, " * instructions * ");
+	centerLine(5, " * instructions * ");
 	revers(0);
-	centerLine(9, "game keys:");
-	centerLine(11, "<return> to roll or reroll the dice");
-	centerLine(13, "<1-6> to select dice to reroll");
-	centerLine(14, "<a-m> to choose category to score");
-	centerLine(16, "<s> to sort the dice");
-	centerLine(18, "-- key --");
+	centerLine(7, "game keys:");
+	centerLine(9, "<return> to roll or reroll the dice");
+	centerLine(11, "<1-6> to select dice to reroll");
+	centerLine(12, "<a-m> to choose category to score");
+	centerLine(14, "<s> to sort the dice");
+	centerLine(16, "-- key --");
 	cgetc();
 }
 
@@ -608,7 +608,7 @@ void startgame()
 		centerLine(promptTopRow + 6, "how many players (2-4)?");
 
 		cursor(1);
-		c = cgetc();
+		c = tolower(cgetc());
 		numPlayers = c - '0';
 		cursor(0);
 		if (c == 'i')
@@ -1009,8 +1009,7 @@ void mainloop()
 				{
 					doTurnRoll();
 				}
-				if (cmd == 'q')
-					quit = true;
+
 				if ((cmd >= 'a' && cmd <= 'f') || (cmd >= 'g' && cmd <= 'm'))
 				{
 					idx = cmd - 'a';

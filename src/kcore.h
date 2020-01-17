@@ -87,6 +87,8 @@ void kc_commitRow(unsigned char row);
 
 char kc_rowForDataRow(unsigned char dataRow);
 
+char kc_getNumTurnsForPlayer(unsigned char playerIdx);
+
 unsigned char checkSame(char count);
 byte currentDiceSum(void);
 
