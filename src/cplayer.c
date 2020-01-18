@@ -42,6 +42,8 @@ int cp_scoreForRowChoice[18];
 char cp_sortedRerollRows[18];
 char cp_haveBonus;
 
+byte eyesCount[6];
+
 int currentValueForRow(int aRow)
 {
 	return kc_tableValue(aRow, _currentPlayer, _currentRound);
@@ -540,6 +542,7 @@ int markDiceForStraight(int row)
 	return -1;
 }
 
+/*
 int cp_markDice(void)
 {
 	int row;
@@ -563,6 +566,358 @@ int cp_markDice(void)
 	}
 	return -1;
 }
+*/
+
+int numOfDiceWith(byte i)
+{
+	return eyesCount[i - 1];
+}
+
+void countDice()
+{
+	byte i;
+	byte res;
+	for (i = 0; i < 6; i++)
+	{
+		eyesCount[i] = 0;
+	}
+
+	for (i = 0; i < 5; i++)
+	{
+		res = kc_diceValue(i);
+		++eyesCount[res - 1];
+	}
+}
+
+void logRule(byte i)
+{
+	gotoxy(1, 23);
+	cprintf("r%d ", i);
+}
+
+int cp_markDice()
+{
+	byte i, j;
+	byte res;
+	byte hasDoubles;
+
+	countDice();
+	kc_recalcTVals();
+
+	if (kc_getRollCount() == 1) // -------------- exceptions before second roll ----------------
+	{
+		// === RULE 1 ===
+		// with a full house containing three 1s, he will keep all the dice and
+		// put in the Full House box.
+		if (checkSame(3) && checkSame(2) && (checkSame(3) != checkSame(2)) && eyesCount[0] == 3)
+		{
+			logRule(1);
+			if (currentValueForRow(row_full_house) == -1)
+			{
+				return row_full_house;
+			}
+		}
+
+		// === RULE 2 ===
+		// with 12344 he will keep the pair not the small straight.
+		if (numOfDiceWith(1) == 1 &&
+			numOfDiceWith(2) == 1 &&
+			numOfDiceWith(3) == 1 &&
+			numOfDiceWith(4) == 2)
+		{
+			logRule(2);
+			markDiceWithValue(1);
+			markDiceWithValue(2);
+			markDiceWithValue(3);
+			return -1;
+		}
+
+		// === RULE 3 ===
+		// with a 3456 and a pair he will keep the pair not the small straight.
+		if (numOfDiceWith(3) >= 1 &&
+			numOfDiceWith(4) >= 1 &&
+			numOfDiceWith(5) >= 1 &&
+			numOfDiceWith(6) >= 1 &&
+			(numOfDiceWith(3) == 2 ||
+			 numOfDiceWith(4) == 2 ||
+			 numOfDiceWith(5) == 2 ||
+			 numOfDiceWith(6) == 2))
+		{
+			logRule(3);
+			for (i = 1; i <= 6; i++)
+			{
+				if (numOfDiceWith(i) == 1)
+				{
+					markDiceWithValue(i);
+					return -1;
+				}
+			}
+		}
+
+		// === RULE 4 ===
+		// with a pair of 1s he will keep, in order of preference,
+		// 345, 5, 4 or 6, not the pair of 1s.
+
+		if (numOfDiceWith(1) == 2)
+		{
+			if (numOfDiceWith(3) == 1 &&
+				numOfDiceWith(4) == 1 &&
+				numOfDiceWith(5) == 1)
+			{
+				logRule(41);
+				markDiceWithValue(1);
+				return -1;
+			}
+			if (numOfDiceWith(5) >= 1)
+			{
+				logRule(42);
+				markDiceWithValue(1);
+				markDiceWithValue(2);
+				markDiceWithValue(3);
+				markDiceWithValue(4);
+				markDiceWithValue(6);
+				return -1;
+			}
+			if (numOfDiceWith(4) >= 1)
+			{
+				logRule(43);
+				markDiceWithValue(1);
+				markDiceWithValue(2);
+				markDiceWithValue(3);
+				markDiceWithValue(5);
+				markDiceWithValue(6);
+				return -1;
+			}
+			if (numOfDiceWith(6) >= 1)
+			{
+				logRule(44);
+				markDiceWithValue(1);
+				markDiceWithValue(2);
+				markDiceWithValue(3);
+				markDiceWithValue(4);
+				markDiceWithValue(5);
+				return -1;
+			}
+		}
+	}
+	else //  -------------- exceptions before second roll ----------------
+	{
+
+		// === RULE 5 ===
+		// with a full house containing three 1s, three 2s or three 3s,
+		// he will keep all the dice and put in the Full House box.
+
+		if ((checkSame(3) && checkSame(2) && (checkSame(3) != checkSame(2))) &&
+			(numOfDiceWith(3) == 3 || numOfDiceWith(2) == 3 || numOfDiceWith(1) == 3))
+		{
+			if (currentValueForRow(row_full_house) == -1)
+			{
+				logRule(5);
+				return row_full_house;
+			}
+		}
+
+		// === RULE 6 & 7 ===
+		// with a pair of 1s and a pair of 2s
+		// or with a pair of 1s and a pair of 3s,
+		// he will keep both pairs.
+
+		if (numOfDiceWith(1) == 2 && numOfDiceWith(2) == 2)
+		{
+			logRule(6);
+			markDiceWithValue(3);
+			markDiceWithValue(4);
+			markDiceWithValue(5);
+			markDiceWithValue(6);
+			return -1;
+		}
+
+		if (numOfDiceWith(1) == 2 && numOfDiceWith(3) == 2)
+		{
+			logRule(7);
+			markDiceWithValue(2);
+			markDiceWithValue(4);
+			markDiceWithValue(5);
+			markDiceWithValue(6);
+			return -1;
+		}
+
+		// === RULE 8 ===
+		// with 11345 he will keep 345 not the pair.
+
+		if (numOfDiceWith(1) == 2 && numOfDiceWith(3) == 1 &&
+			numOfDiceWith(4) == 1 && numOfDiceWith(5) == 1)
+		{
+			logRule(8);
+			markDiceWithValue(1);
+			return -1;
+		}
+
+		// === RULE 9 ===
+		// with 12456 he will keep 456 not just the 5.
+
+		if (numOfDiceWith(1) == 1 &&
+			numOfDiceWith(2) == 1 &&
+			numOfDiceWith(4) == 1 &&
+			numOfDiceWith(5) == 1 &&
+			numOfDiceWith(6) == 1)
+		{
+			logRule(9);
+			markDiceWithValue(1);
+			markDiceWithValue(2);
+			return -1;
+		}
+	}
+
+	// regular rules (applied if special cases don't apply)
+
+	// === RULE 10 ===
+	if (checkSame(4))
+	{
+		logRule(10);
+		markDiceWithValue(checkSame(1));
+		return -1;
+	}
+
+	// === RULE 11 ===
+	// When a player has a full house he will keep the three-of-a-kind.
+	if (checkSame(3))
+	{
+		logRule(11);
+		for (i = 0; i < 5; i++)
+		{
+			if (kc_diceValue(i) != checkSame(3))
+			{
+				kc_setShouldRoll(i, true);
+			}
+		}
+		return -1;
+	}
+
+	// === RULE 12 ===
+	// With two pairs, keep the higher pair and rethrow the other three dice.
+	// 25251
+	res = 0;
+	for (i = 1; i <= 6; i++)
+	{
+		if (numOfDiceWith(i) == 2)
+		{
+			res++;
+		}
+	}
+	if (res == 2)
+	{
+		logRule(12);
+		for (i = 6; i >= 1; i--)
+		{
+			if (numOfDiceWith(i) == 2)
+			{
+				for (j = 1; j <= 6; j++)
+				{
+					if (j != i)
+					{
+						markDiceWithValue(j);
+					}
+				}
+				return -1;
+			}
+		}
+	}
+
+	// === RULE 13 ===
+	// If a large straight is rolled, keep it.
+
+	if (
+		(numOfDiceWith(1) == 1 &&
+		 numOfDiceWith(2) == 1 &&
+		 numOfDiceWith(3) == 1 &&
+		 numOfDiceWith(4) == 1 &&
+		 numOfDiceWith(5) == 1) ||
+		((numOfDiceWith(2) == 1 &&
+		  numOfDiceWith(3) == 1 &&
+		  numOfDiceWith(4) == 1 &&
+		  numOfDiceWith(5) == 1 &&
+		  numOfDiceWith(6) == 1)))
+	{
+		logRule(13);
+		if (currentValueForRow(row_full_house) == -1)
+		{
+			return row_lg_straight;
+		}
+	}
+
+	// === RULE 14 ===
+	//  If a small straight is rolled, keep it and re-roll the fifth die.
+
+	if (currentValueForRow(row_lg_straight) == -1)
+	{
+		if (tvals[row_sm_straight] == 30)
+		{
+			logRule(14);
+			/* sm straight is one of
+
+	x1234
+	x2345
+	x3456
+
+	*/
+
+			// try for double dice values
+			for (i = 1; i <= 6; i++)
+			{
+				if (numOfDiceWith(i) == 2)
+				{
+					markFirstDiceWithValue(i);
+					return -1;
+				}
+			}
+
+			if (numOfDiceWith(1) == 1 && numOfDiceWith(2) == 1 && numOfDiceWith(6) == 1)
+			{ // x1234 : x==6
+				markDiceWithValue(6);
+			}
+			else
+			{ // x3456 : x==1
+				markDiceWithValue(1);
+			}
+		}
+	}
+
+	// === RULE 15 ===
+	// one pair and nothing else: keep the pair
+	if (checkSame(2))
+	{
+		logRule(15);
+		for (i = 0; i < 5; i++)
+		{
+			if (kc_diceValue(i) != checkSame(2))
+			{
+				kc_setShouldRoll(i, true);
+			}
+		}
+		return -1;
+	}
+
+	// === RULE 16 ===
+	//  If all the dice are different and there is no straight, keep only the 5.
+
+	if (tvals[row_sm_straight] == 0 && tvals[row_lg_straight == 0])
+	{
+		logRule(16);
+		if (numOfDiceWith(5) >= 1)
+		{
+			markDiceWithValue(1);
+			markDiceWithValue(2);
+			markDiceWithValue(3);
+			markDiceWithValue(4);
+			markDiceWithValue(6);
+			return -1;
+		}
+	}
+
+	return -1;
+}
+
 
 void cp_analyze(void)
 {
