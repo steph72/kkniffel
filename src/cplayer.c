@@ -473,7 +473,7 @@ int markDiceForFullHouse(void)
 	return -1;
 }
 
-void markDieWithValue(char val)
+void markDiceWithValue(char val)
 {
 	char i;
 	for (i = 0; i < 5; ++i)
@@ -481,6 +481,19 @@ void markDieWithValue(char val)
 		if (kc_diceValue(i) == val)
 		{
 			kc_setShouldRoll(i, true);
+		}
+	}
+}
+
+void markFirstDiceWithValue(char val)
+{
+	char i;
+	for (i = 0; i < 5; ++i)
+	{
+		if (kc_diceValue(i) == val)
+		{
+			kc_setShouldRoll(i, true);
+			return;
 		}
 	}
 }
@@ -532,18 +545,17 @@ int markDiceForStraight(int row)
 
 	if (diceValueCount[0] == 1 && diceValueCount[1] == 1 && diceValueCount[5] == 1)
 	{ // x1234 : x==6
-		markDieWithValue(6);
+		markDiceWithValue(6);
 	}
 	else
 	{ // x3456 : x==1
-		markDieWithValue(1);
+		markDiceWithValue(1);
 	}
 
 	return -1;
 }
 
-/*
-int cp_markDice(void)
+int markDiceSK(void)
 {
 	int row;
 	row = cp_sortedRerollRows[0];
@@ -566,7 +578,6 @@ int cp_markDice(void)
 	}
 	return -1;
 }
-*/
 
 int numOfDiceWith(byte i)
 {
@@ -595,7 +606,7 @@ void logRule(byte i)
 	cprintf("r%d ", i);
 }
 
-int cp_markDice()
+int markDiceWP()
 {
 	byte i, j;
 	byte res;
@@ -901,7 +912,7 @@ int cp_markDice()
 	// === RULE 16 ===
 	//  If all the dice are different and there is no straight, keep only the 5.
 
-	if (tvals[row_sm_straight] == 0 && tvals[row_lg_straight == 0])
+	if (tvals[row_sm_straight] == 0 && tvals[row_lg_straight] == 0)
 	{
 		logRule(16);
 		if (numOfDiceWith(5) >= 1)
@@ -918,6 +929,20 @@ int cp_markDice()
 	return -1;
 }
 
+int cp_markDice()
+{
+
+	return markDiceSK();
+
+	if (kc_getNumTurnsForPlayer(_currentPlayer) < 255)
+	{
+		return markDiceWP();
+	}
+	else
+	{
+		return markDiceSK();
+	}
+}
 
 void cp_analyze(void)
 {
@@ -1032,7 +1057,7 @@ int cp_exitRow(void)
 	{
 		cp_scoreForRowChoice[0] = 10 + tvals[0];
 	}
-	
+
 	if (cp_scoreForRowChoice[1] == 5)
 	{
 		cp_scoreForRowChoice[1] = 8 + tvals[1];

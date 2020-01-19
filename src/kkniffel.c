@@ -34,7 +34,7 @@
 #include "cplayer.h"
 
 #define MAX_ROLL_COUNT 3
-#define MAX_ROUNDS 20
+#define MAX_ROUNDS 50
 
 // clang-format off
 #if defined(__PET__)
@@ -79,7 +79,7 @@ char namelength;
 
 char benchmarkMode;
 
-int statTotal;
+unsigned int statTotal;
 int benchmarkRolls;
 int benchmarkRollsToDo;
 char numResults;
@@ -810,7 +810,8 @@ void postRound()
 
 	if (benchmarkMode)
 	{
-		cprintf("\r\navg %d", statTotal / numResults);
+		gotoxy(0,0);
+		cprintf("\r\n#%d avg %d     ",numResults,statTotal / numResults);
 	}
 	else
 	{

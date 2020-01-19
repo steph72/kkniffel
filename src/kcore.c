@@ -648,6 +648,7 @@ char kc_getNumTurnsForPlayer(unsigned char playerIdx)
 			}
 		}
 	}
+	return numTurns;
 }
 
 void kc_doSingleRoll()
