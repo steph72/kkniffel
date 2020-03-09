@@ -68,9 +68,24 @@ const char *rownames[] = {"aces", "twos", "threes",
 
 /* -------------------- private functions ------------------------- */
 
+unsigned int drand(unsigned int max)
+{
+
+	unsigned int x;
+
+	do
+	{
+		x = rand();
+	} while (x >= (RAND_MAX - RAND_MAX % max));
+
+	x %= max;
+
+	return x;
+}
+
 void rollDice(unsigned char nr)
 {
-	dvalues[nr] = 1 + (rand() % 6);
+	dvalues[nr] = 1 + drand(6);
 }
 
 int __fastcall__ dcompare(const void *_a, const void *_b)
@@ -495,6 +510,13 @@ void kc_recalcTVals(void)
 					tvals[11] = 30;
 				}
 			}
+		}
+	}
+
+	for (row = 0; row < 18; row++)
+	{
+		if (kc_tableValue(row,_currentPlayer,_currentPlayer)!=-1) {
+			tvals[row] = 0;
 		}
 	}
 }

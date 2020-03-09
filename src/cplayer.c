@@ -15,7 +15,6 @@
 	Oh, the joy of coming home and finally doing some
 	real software development...!
 
-
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -87,7 +86,7 @@ void analyzeUpperRows(void)
 
 				if (scoreV < 30)
 				{
-					cp_scoreForRowChoice[row] = 5;
+					cp_scoreForRowChoice[row] = (12 - (row * 2)) + tvals[row];
 				}
 				else
 				{
@@ -147,6 +146,17 @@ void analyzeSameKind(void)
 				}
 			}
 			cp_scoreForRowChoice[row] = scoreV;
+
+			cp_haveBonus = (currentValueForRow(row_upper_bonus) > 0);
+
+			if (!cp_haveBonus)
+			{
+				// still need the bonus? choose upper rows instead
+				if ((tvals[row_sixes] >= 18) || (tvals[row_fives] >= 15))
+				{
+					cp_scoreForRowChoice[row] = 0;
+				}
+			}
 		}
 	}
 }
@@ -309,7 +319,14 @@ void analyzeFullHouse(char row)
 		}
 		else if (threeSame && !twoSame)
 		{
-			tempScore = 40;
+			if (kc_getRollCount() != 3)
+			{
+				tempScore = 40;
+			}
+			else
+			{
+				tempScore = 5;
+			}
 		}
 		cp_scoreForRowChoice[row] = tempScore;
 	}
@@ -614,6 +631,11 @@ int markDiceWP()
 
 	countDice();
 	kc_recalcTVals();
+
+	if (tvals[row_lg_straight] != 0)
+	{
+		return row_lg_straight;
+	}
 
 	if (kc_getRollCount() == 1) // -------------- exceptions before second roll ----------------
 	{
@@ -932,9 +954,7 @@ int markDiceWP()
 int cp_markDice()
 {
 
-	return markDiceSK();
-
-	if (kc_getNumTurnsForPlayer(_currentPlayer) < 255)
+	if (kc_getNumTurnsForPlayer(_currentPlayer) <= 3)
 	{
 		return markDiceWP();
 	}
@@ -1010,9 +1030,9 @@ int cp_exitRow(void)
 				{
 
 					/* make slot available for worst case */
-					if (tvals[i] < ((i + 1) * 2))
+					if (cp_scoreForRowChoice[i] < 5)
 					{
-						if (i < 3)
+						if (i <= 3)
 						{
 							cp_scoreForRowChoice[i] = 5;
 						}
@@ -1026,24 +1046,9 @@ int cp_exitRow(void)
 					lowerMod = i - row_3same;
 					if (i == row_full_house)
 					{
-						lowerMod = 0;
+						lowerMod = -1;
 					}
-
-					if (tvals[i] == 0)
-					// set default scores for lower slots if we haven't
-					// already determined a good score
-					{
-						if (haveUpper || pointsNeededForBonus <= 0)
-						{
-							cp_scoreForRowChoice[i] = 5 + lowerMod;
-						}
-						else
-						{
-							/* give lower slots away more easily
-			 				while still aiming for bonus */
-							cp_scoreForRowChoice[i] = 6 + lowerMod;
-						}
-					}
+					cp_scoreForRowChoice[i] = 9 + lowerMod;
 				}
 			}
 		}
@@ -1051,16 +1056,6 @@ int cp_exitRow(void)
 		{
 			cp_scoreForRowChoice[i] = -1;
 		}
-	}
-
-	if (cp_scoreForRowChoice[0] == 5)
-	{
-		cp_scoreForRowChoice[0] = 10 + tvals[0];
-	}
-
-	if (cp_scoreForRowChoice[1] == 5)
-	{
-		cp_scoreForRowChoice[1] = 8 + tvals[1];
 	}
 
 	if (currentValueForRow(row_chance) < 0)
@@ -1074,11 +1069,22 @@ int cp_exitRow(void)
 
 	qsort(cp_sortedRerollRows, 18, 1, scoreSort);
 
-	// zeroing something important? take chance instead
+	// zeroing something important? take ones, twos & chance instead
 
 	if (tvals[cp_sortedRerollRows[0]] == 0 &&
-		cp_sortedRerollRows[0] >= row_3same)
+		cp_sortedRerollRows[0] >= row_fours)
 	{
+
+		if (currentValueForRow(row_ones) < 0)
+		{
+			return row_ones;
+		}
+
+		if (currentValueForRow(row_twos) < 0)
+		{
+			return row_twos;
+		}
+
 		if (cp_scoreForRowChoice[row_chance] >= 10)
 		{
 			if (currentValueForRow(row_chance) < 0)

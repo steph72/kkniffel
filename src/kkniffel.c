@@ -62,6 +62,8 @@
 #define RETURNKEY '\n'
 #endif
 
+unsigned int gSeed;
+
 char inbuf[40];
 
 int roundResults[MAX_ROUNDS][4]; // results for postgame
@@ -247,6 +249,7 @@ void doTurnRoll()
 			doSingleRoll();
 		} while (kbhit() == 0);
 	}
+	srand(gSeed++);
 	doSingleRoll();
 	for (i = 0; i < 5; i++)
 	{
@@ -529,11 +532,10 @@ void startBenchmarkMode()
 	gotoxy(0, 3);
 	cputs("press alphanumeric key for\r\nrandom seed: ");
 	cursor(1);
-	seed = cgetc() * 555;
+	gSeed = cgetc() * 555;
 	cprintf("-> %u\r\n", seed);
 	cursor(0);
 	cputs("\r\nrunning kkniffelbench...");
-	srand(seed);
 }
 
 void bannerDice()
@@ -976,11 +978,11 @@ void mainloop()
 
 				cmd = tolower(cgetc());
 #ifdef DEBUG
-				if (cmd == 'A')
+				if (cmd == '!')
 				{
 					doCP();
 				}
-				if (cmd == 'D')
+				if (cmd == '?')
 				{
 					debugDumpChoices();
 				}
@@ -1058,7 +1060,7 @@ int main()
 {
 	splash();
 #ifndef __APPLE2__
-	srand(getJiffies());
+	gSeed=getJiffies();
 #endif
 	mainloop();
 	return 0;
