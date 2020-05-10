@@ -25,6 +25,7 @@
 #include <conio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <6502.h>
 #include <time.h>
@@ -32,15 +33,13 @@
 #include "io.h"
 #include "kcore.h"
 #include "cplayer.h"
+#include "highscores.h"
 
 #define MAX_ROLL_COUNT 3
 #define MAX_ROUNDS 50
 
-// clang-format off
-#if defined(__PET__)
 #pragma warn(no-effect, off)
-#endif
-// clang-format on
+
 
 #define BOTTOMY 24
 
@@ -62,16 +61,17 @@
 #define RETURNKEY '\n'
 #endif
 
+void refreshTvalsDisplay(void);
+void removeTvalDisplay(void); // remove tval display
+void plotDiceLegend(unsigned char flag);
+
 unsigned int gSeed;
+unsigned int gSessionCount;
 
 char inbuf[40];
 
 int roundResults[MAX_ROUNDS][4]; // results for postgame
 int totals[4];					 // totals per player for postgame
-
-void refreshTvalsDisplay(void);
-void removeTvalDisplay(void); // remove tval display
-void plotDiceLegend(unsigned char flag);
 
 unsigned char quit;
 unsigned char currentRound;
@@ -559,13 +559,14 @@ void displayCredits()
 	centerLine(5, " * k k n i f f e l * ");
 	revers(0);
 	centerLine(7, "written by stephan kleinert");
-	centerLine(8, "at k-burg, bad honnef and");
-	centerLine(9, "at hundehaus im reinhardswald");
-	centerLine(10, "2019/20");
-	centerLine(12, "with very special thanks to");
-	centerLine(13, "frau k., buba k. candor k.");
-	centerLine(14, "and the seven turtles!");
-	centerLine(16, "-- key --");
+	centerLine(8, "at k-burg, bad honnef,");
+	centerLine(9, "hundehaus im reinhardswald and");
+	centerLine(10, "at k cottage, erl");
+	centerLine(11, "2019/20");
+	centerLine(13, "with very special thanks to");
+	centerLine(14, "frau k., buba k. candor k.");
+	centerLine(15, "and the seven turtles!");
+	centerLine(17, "-- key --");
 	cgetc();
 }
 
@@ -585,12 +586,55 @@ void displayInstructions()
 	cgetc();
 }
 
+void showHighscores(char *title, unsigned char positions[], unsigned char save)
+{
+	int i;
+	int j;
+	int pos;
+	clrscr();
+	textcolor(colBonus);
+	centerLine(0, title);
+	textcolor(colText);
+	for (i = 1; i <= HS_LISTSIZE; ++i)
+	{
+		centerLine(1 + (2 * i), highscoreAtPos(i));
+	}
+	if (positions)
+	{
+#if defined(__PET__) || defined(__APPLE2__) 		
+revers(1);
+#endif
+		textcolor(colSplashRed);
+		for (j = 0; j < numPlayers; ++j)
+		{
+			pos = positions[j];
+			if (pos)
+			{
+				centerLine(1 + (2 * pos), highscoreAtPos(pos));
+			}
+		}
+	}
+	#if defined(__PET__) || defined(__APPLE2__)
+	revers(0);
+	#endif
+	textcolor(colLowerSum);
+	if (save) {
+		centerLine(24,"please wait, saving...");
+		saveHighscores();
+	}
+	centerLine(24,    "   - press any key -  ");
+	clearbuf();
+	cgetc();
+}
+
 void startgame()
 {
 	char i;
 	char c;
 	char promptTopRow;
+	char sessionCountRow[40];
 
+	sprintf(sessionCountRow, "k-cottage session #%d", gSessionCount);
 	promptTopRow = (BOTTOMY / 2) - 5;
 
 	do
@@ -601,13 +645,13 @@ void startgame()
 		revers(1);
 		centerLine(promptTopRow, (char *)gTitle);
 		revers(0);
-		centerLine(promptTopRow + 2, "- version 2.32 -");
+		centerLine(promptTopRow + 2, "- version 2.4 -");
 		centerLine(promptTopRow + 3, "written by stephan kleinert");
 		textcolor(colBonus);
-		centerLine(promptTopRow + 8, "or type 'i' for instructions");
-		centerLine(promptTopRow + 9, "or 'c' for credits");
+		centerLine(promptTopRow + 10, "or i)instructions c)redits h)ighscores");
 		textcolor(colLowerSum);
-		centerLine(promptTopRow + 6, "how many players (2-4)?");
+		centerLine(promptTopRow + 6, sessionCountRow);
+		centerLine(promptTopRow + 7, "how many players (2-4)?");
 
 		cursor(1);
 		c = tolower(cgetc());
@@ -625,6 +669,10 @@ void startgame()
 		{
 			startBenchmarkMode();
 			return;
+		}
+		else if (c == 'h')
+		{
+			showHighscores("** high scores **", NULL, false);
 		}
 	} while (numPlayers < 2 || numPlayers > 4);
 
@@ -733,7 +781,6 @@ void commitRow(unsigned char row)
 {
 	unsigned char i;
 	unsigned char rOn;
-	unsigned int t;
 
 	if (!kc_getIsComputerPlayer(_currentPlayer))
 	{
@@ -774,26 +821,85 @@ void commitRow(unsigned char row)
 	}
 }
 
+int pcomp(const void *a, const void *b)
+{
+	int resA;
+	int resB;
+
+	cputs("FOOOOOO!");
+
+	resA = kc_tableValue(17, *(unsigned char *)a, 0);
+	resB = kc_tableValue(17, *(unsigned char *)b, 0);
+
+	if (resA == resB)
+	{
+		return 0;
+	}
+	else if (resA < resB)
+	{
+		return 1;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
 void postRound()
 {
+	unsigned char newHighscorePositions[4];
+	unsigned char newH;
 	unsigned char i;
 	unsigned char j;
 	int res;
+	unsigned char sortedPlayers[4];
+	unsigned char pos;
+	unsigned char resultsTop;
 	char jn;
-	clrscr();
-	cprintf("*** round finished! ***");
-	updatePlayer(3);
+
+	newH = false;
+
+	for (i = 0; i < numPlayers; i++)
+	{
+		sortedPlayers[i] = i;
+		newHighscorePositions[i] = 0;
+	}
+
+	qsort(sortedPlayers, numPlayers, 1, pcomp);
+
 	textcolor(colText);
 	for (j = 0; j < numPlayers; j++)
 	{
-		roundResults[currentRound][j] = kc_tableValue(17, j, 0);
-		statTotal += kc_tableValue(17, j, 0);
+		i = sortedPlayers[j];
+
+		res = kc_tableValue(17, i, 0);
+		pos = checkAndCommitHighscore(res, _pname[i]);
+		if (pos)
+		{
+			newH = true;
+			newHighscorePositions[j] = pos;
+		}
+
+		roundResults[currentRound][i] = res;
+		statTotal += res;
 		numResults++;
-		totals[j] = 0;
+		totals[i] = 0;
 	}
+
+	if (newH)
+	{
+		showHighscores("new highscores!", newHighscorePositions, true);
+	}
+
+	clrscr();
+	cprintf("*** round finished! ***\r\n\r\n");
+
+	resultsTop = wherey() + 4;
+	updatePlayer(wherey() + 2);
+
 	for (i = 0; i <= currentRound; i++)
 	{
-		gotoxy(0, 5 + i);
+		gotoxy(0, resultsTop + i);
 		cprintf("round %d", i + 1);
 		for (j = 0; j < numPlayers; j++)
 		{
@@ -802,30 +908,30 @@ void postRound()
 			{
 				textcolor(colLowerSum);
 			}
-			gotoxy(columnForPlayer(j), 5 + i);
+			gotoxy(columnForPlayer(j), resultsTop + i);
 			cprintf("%d", res);
 			totals[j] = totals[j] + res;
 			textcolor(colText);
 		}
 	}
-	gotoxy(0, 7 + currentRound);
+	gotoxy(0, resultsTop + 2 + currentRound);
 
 	if (benchmarkMode)
 	{
-		gotoxy(0,0);
-		cprintf("\r\n#%d avg %d     ",numResults,statTotal / numResults);
+		gotoxy(0, 0);
+		cprintf("\r\n#%d avg %d     ", numResults, statTotal / numResults);
 	}
 	else
 	{
 		cputs("total");
 		for (j = 0; j < numPlayers; j++)
 		{
-			gotoxy(columnForPlayer(j), 5 + currentRound + 2);
+			gotoxy(columnForPlayer(j), resultsTop + currentRound + 2);
 			cprintf("%d", totals[j]);
 		}
 	}
 
-	gotoxy(0, 5 + currentRound + 5);
+	gotoxy(0, resultsTop + currentRound + 5);
 
 	if (!benchmarkMode)
 	{
@@ -978,6 +1084,10 @@ void mainloop()
 
 				cmd = tolower(cgetc());
 #ifdef DEBUG
+				if (cmd == 'q')
+				{
+					kc_debugFill(15);
+				}
 				if (cmd == '!')
 				{
 					doCP();
@@ -1036,32 +1146,39 @@ void mainloop()
 	} while (!quit);
 }
 
-void splash()
+void initGame()
 {
 	startup();
+
+#ifndef __APPLE2__
+	gSeed = getJiffies();
+#endif
+
 	benchmarkMode = false;
 	statTotal = 0;
 	numResults = 0;
 	gotoxy(0, 0);
-#ifdef __cbm__
+
+#ifdef __CBM__
 	cputs("stephan   katja");
-	textcolor(2);
+	textcolor(COLOR_RED);
 	gotoxy(8, 0);
 	cputc(211);
+	gotoxy(0, 2);
 #else
 	cputs("stephan <3 katja");
 #endif
-	jiffySleep(23);
+
+	gSessionCount = kc_incrementAndGetSessionCount();
+	clrscr();
+	initHighscores();
 	initIO();
 	clrscr();
 }
 
 int main()
 {
-	splash();
-#ifndef __APPLE2__
-	gSeed=getJiffies();
-#endif
+	initGame();
 	mainloop();
 	return 0;
 }

@@ -94,7 +94,7 @@ byte currentDiceSum(void);
 
 #ifdef DEBUG
 void kc_debugFill(char num);
-char kc_setDiceValue(char diceIndex, char diceValue);
+void kc_setDiceValue(char diceIndex, char diceValue);
 #endif
 
 #endif

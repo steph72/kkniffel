@@ -617,17 +617,22 @@ void countDice()
 	}
 }
 
+// clang-format off
+#pragma warn(unused-param, push, off)
 void logRule(byte i)
 {
+#ifdef DEBUG
 	gotoxy(1, 23);
 	cprintf("r%d ", i);
+#endif
 }
+#pragma warn(unused-param, pop)
+// clang-format on
 
 int markDiceWP()
 {
 	byte i, j;
 	byte res;
-	byte hasDoubles;
 
 	countDice();
 	kc_recalcTVals();
@@ -1008,6 +1013,27 @@ int cp_exitRow(void)
 		}
 	}
 	pointsNeededForBonus = 63 - upperSum;
+
+	/* always leave chance possible... */
+	if (currentValueForRow(row_chance) < 0)
+	{
+		cp_scoreForRowChoice[row_chance] = 5;
+
+		if (!haveUpper)
+		{
+			cp_scoreForRowChoice[row_chance] += 10;
+
+			for (i = row_threes; i <= row_chance; ++i)
+			{
+				/* ...except we have a better lower value somewhere */
+				if (currentValueForRow(i) < 0 && tvals[i] > tvals[row_chance])
+				{
+					cp_scoreForRowChoice[row_chance] = 0;
+				}
+			}
+		}
+	}
+
 	for (i = 0; i < 18; i++)
 	{
 		cp_sortedRerollRows[i] = i;
@@ -1056,14 +1082,15 @@ int cp_exitRow(void)
 		{
 			cp_scoreForRowChoice[i] = -1;
 		}
-	}
 
-	if (currentValueForRow(row_chance) < 0)
-	{
-		cp_scoreForRowChoice[row_chance] = 10;
-		if (tvals[row_chance] > 19)
+		/* lower slot giving more than 25 points? */
+
+		if (currentValue < 0 && i >= row_3same && i != row_full_house && i<row_chance)
 		{
-			cp_scoreForRowChoice[row_chance] = 20;
+			if (tvals[i] >= 23)
+			{
+				cp_scoreForRowChoice[i] += 40;
+			}
 		}
 	}
 
@@ -1092,6 +1119,44 @@ int cp_exitRow(void)
 				return row_chance;
 			}
 		}
+
+		if (!haveUpper && currentValueForRow(row_kniffel) < 0)
+		{
+			return row_kniffel;
+		}
+
+		/* last resort: if we can take anything that gives us
+		a value, we take that row */
+
+		for (i = row_ones; i <= row_chance; ++i)
+		{
+			if (i != row_lower_sum &&
+				i != row_overall_sum &&
+				i != row_upper_bonus &&
+				i != row_upper_sum &&
+				i != row_upper_total)
+			{
+				if (currentValueForRow(i) < 0)
+				{
+					cp_scoreForRowChoice[i] = tvals[i];
+				}
+				else
+				{
+					cp_scoreForRowChoice[i] = -1;
+				}
+			}
+		}
+
+		qsort(cp_sortedRerollRows, 18, 1, scoreSort);
+	}
+
+	if (cp_sortedRerollRows[0] == row_chance)
+	{
+		if (!cp_haveBonus &&
+			pointsNeededForBonus > 3 &&
+			currentValueForRow(row_ones) < 0) {
+				return row_ones;
+			}
 	}
 
 	return cp_sortedRerollRows[0];

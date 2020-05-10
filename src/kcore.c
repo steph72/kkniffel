@@ -246,7 +246,7 @@ int kc_incrementAndGetSessionCount()
 {
 	int num;
 	FILE *numfile;
-	numfile = fopen("kkcnt.dat", "rb");
+	numfile = fopen("kkcnt", "rb");
 	if (!numfile)
 	{
 		num = 0;
@@ -256,11 +256,13 @@ int kc_incrementAndGetSessionCount()
 		num = fgetc(numfile);
 		fclose(numfile);
 	}
-	numfile = fopen("kkcnt.dat", "wb");
+	numfile = fopen("kkcnt", "wb");
 	fputc(++num, numfile);
 	fclose(numfile);
 	return num;
 }
+
+#ifdef kkfiles
 
 void kc_removeCurrentState(char *fname)
 {
@@ -329,6 +331,8 @@ char kc_loadCurrentState(char *fname)
 	kc_recalcTVals();
 	return true;
 }
+
+#endif
 
 /************ core game functions ***********/
 
@@ -605,7 +609,7 @@ char kc_diceValue(char diceIndex)
 }
 
 #ifdef DEBUG
-char kc_setDiceValue(char diceIndex, char diceValue)
+void kc_setDiceValue(char diceIndex, char diceValue)
 {
 	dvalues[diceIndex] = diceValue;
 }
