@@ -43,6 +43,9 @@ char cp_haveBonus;
 
 byte eyesCount[6];
 
+void countDice();
+int numOfDiceWith(byte i);
+
 int currentValueForRow(int aRow)
 {
 	return kc_tableValue(aRow, _currentPlayer, _currentRound);
@@ -54,6 +57,7 @@ void analyzeUpperRows(void)
 	int currentValue;
 	int possibleValue;
 	int scoreV;
+	char sufficientRoll;
 
 	cp_haveBonus = (currentValueForRow(row_upper_bonus) > 0);
 
@@ -64,6 +68,7 @@ void analyzeUpperRows(void)
 		{
 
 			possibleValue = tvals[row];
+			sufficientRoll = ((possibleValue/(row+1))>=3);
 
 			/* 
 					max scoring for upper rows:
@@ -91,14 +96,19 @@ void analyzeUpperRows(void)
 				else
 				{
 					cp_scoreForRowChoice[row] = scoreV + possibleValue;
+					if (row >= row_3same && !cp_haveBonus)
+					{
+						// rate high valued rows even higher
+						cp_scoreForRowChoice[row] += 30;
+					}
 				}
 			}
-			else
+			else // can still roll
 			{
 
-				if (scoreV >= 30)
+				if (sufficientRoll)
 				{ /* rate 'sufficient' rows higher */
-					// scoreV += possibleValue;
+					scoreV += possibleValue*2;
 					if (!cp_haveBonus)
 					{				  /* ...and even higher if */
 						scoreV += 30; /* there is no bonus yet */
@@ -112,7 +122,7 @@ void analyzeUpperRows(void)
 
 void analyzeSameKind(void)
 {
-	char row;
+	char row, i;
 	char dCountCheck;
 	int currentValue;
 	int sameDiceValue;
@@ -146,17 +156,6 @@ void analyzeSameKind(void)
 				}
 			}
 			cp_scoreForRowChoice[row] = scoreV;
-
-			cp_haveBonus = (currentValueForRow(row_upper_bonus) > 0);
-
-			if (!cp_haveBonus)
-			{
-				// still need the bonus? choose upper rows instead
-				if ((tvals[row_sixes] >= 18) || (tvals[row_fives] >= 15))
-				{
-					cp_scoreForRowChoice[row] = 0;
-				}
-			}
 		}
 	}
 }
@@ -338,11 +337,15 @@ void analyzeKniffel(int row)
 	int same;
 	int i;
 	int score;
+
+	cp_scoreForRowChoice[row] = 0;
+
 	currentValue = currentValueForRow(row);
 	if (currentValue >= 0)
 	{
 		return;
 	}
+
 	for (i = 5; i > 2; i--)
 	{
 		same = checkSame(i);
@@ -374,10 +377,9 @@ void analyzeKniffel(int row)
 				}
 				return;
 			}
-			score = 16 * i;
+			score = 10 * i;
 			score += (3 - kc_getRollCount()) * 10;
 			cp_scoreForRowChoice[row] = score;
-			return;
 		}
 	}
 }
@@ -429,29 +431,40 @@ int markDiceForUpperSection(int aRow)
 
 int markDiceForSame(int row)
 {
-	int destVal = 0;
-	int testVal = 0;
+	int destCount = 0;
+	int testCount = 0;
 	int destI = 0;
 	byte i;
-	int currentValue;
-	currentValue = tvals[row];
-	if (currentValue > 0)
+
+	if (tvals[row] > 0)
 	{
 		return row;
 	}
-	for (i = 2; i < 5; i++)
+
+	countDice();
+
+	for (i = 1; i <= 6; i++)
 	{
-		testVal = checkSame(i);
-		if ((testVal * i) > (destVal * destI))
+		testCount = numOfDiceWith(i);
+		if (testCount > destCount)
 		{
-			destVal = testVal;
+			destCount = testCount;
 			destI = i;
 		}
 	}
+
 	for (i = 0; i < 5; ++i)
 	{
-		kc_setShouldRoll(i, kc_diceValue(i) != destVal);
+		if (destCount == 1)
+		{
+			kc_setShouldRoll(i, true);
+		}
+		else
+		{
+			kc_setShouldRoll(i, kc_diceValue(i) != destI);
+		}
 	}
+
 	return -1;
 }
 
@@ -575,25 +588,51 @@ int markDiceForStraight(int row)
 int markDiceSK(void)
 {
 	int row;
+#ifdef DEBUG
+	gotoxy(0, 0);
+	cputs("markd sk ");
+#endif
 	row = cp_sortedRerollRows[0];
 	kc_recalcTVals();
-	if (row <= 5)
+
+	if (cp_scoreForRowChoice[row] == -1)
 	{
+		// absolutely no clue what to mark? -> fall back to 4same
+		cputs("ones!");
+		return markDiceForSame(row_4same);
+	}
+	if (row <= 5 && row >= 0)
+	{
+#ifdef DEBUG
+		cputc('1' + row);
+#endif
 		return markDiceForUpperSection(row);
 	}
 	else if (row == row_kniffel || row == row_3same || row == row_4same)
 	{
+#ifdef DEBUG
+		cputs("same");
+		cputc('1' + row);
+#endif
 		return markDiceForSame(row);
 	}
 	else if (row == row_sm_straight || row == row_lg_straight)
 	{
+#ifdef DEBUG
+		cputs("straight");
+		cputc('1' + row);
+#endif
 		return markDiceForStraight(row);
 	}
 	else if (row == row_full_house)
 	{
+#ifdef DEBUG
+		cputs("fullh");
+		cputc('1' + row);
+#endif
 		return markDiceForFullHouse();
 	}
-	return -1;
+	return markDiceForSame(row_4same);
 }
 
 int numOfDiceWith(byte i)
@@ -622,8 +661,8 @@ void countDice()
 void logRule(byte i)
 {
 #ifdef DEBUG
-	gotoxy(1, 23);
-	cprintf("r%d ", i);
+    // gotoxy(1, 23);
+	// cprintf("r%d ", i);
 #endif
 }
 #pragma warn(unused-param, pop)
@@ -633,6 +672,11 @@ int markDiceWP()
 {
 	byte i, j;
 	byte res;
+
+#ifdef DEBUG
+	gotoxy(0, 0);
+	cputs("markd wp");
+#endif
 
 	countDice();
 	kc_recalcTVals();
@@ -985,6 +1029,10 @@ void cp_analyze(void)
 	analyzeFullHouse(13);
 	analyzeKniffel(14);
 	qsort(cp_sortedRerollRows, 18, 1, scoreSort);
+#ifdef DEBUG
+	gotoxy(0, 23);
+	cprintf("keep: %c", kc_letterForRow(cp_sortedRerollRows[0]));
+#endif
 	/* debugDumpCP(); */
 }
 
@@ -993,21 +1041,15 @@ int cp_exitRow(void)
 
 	int i;
 	int currentValue;
-	int haveUpper;
 	int upperSum = 0;
 	int pointsNeededForBonus = 0;
-	int lowerMod;
+	int noGoodRoll;
 
 	/* determine if we have all upper rolls... */
-	haveUpper = true;
 	for (i = 0; i <= 5; i++)
 	{
 		currentValue = currentValueForRow(i);
-		if (currentValue < 0)
-		{
-			haveUpper = false;
-		}
-		else
+		if (currentValue >= 0)
 		{
 			upperSum += currentValue;
 		}
@@ -1017,146 +1059,67 @@ int cp_exitRow(void)
 	/* always leave chance possible... */
 	if (currentValueForRow(row_chance) < 0)
 	{
-		cp_scoreForRowChoice[row_chance] = 5;
-
-		if (!haveUpper)
-		{
-			cp_scoreForRowChoice[row_chance] += 10;
-
-			for (i = row_threes; i <= row_chance; ++i)
-			{
-				/* ...except we have a better lower value somewhere */
-				if (currentValueForRow(i) < 0 && tvals[i] > tvals[row_chance])
-				{
-					cp_scoreForRowChoice[row_chance] = 0;
-				}
-			}
-		}
-	}
-
-	for (i = 0; i < 18; i++)
-	{
-		cp_sortedRerollRows[i] = i;
-		currentValue = currentValueForRow(i);
-
-		/* slot is still free? */
-		if (currentValue < 0 && i != row_upper_bonus)
-		{
-
-			/* is it an upper slot? */
-			if (i <= 5)
-			{
-
-				/* enough for bonus? then prefer this slot */
-				if (tvals[i] >= pointsNeededForBonus)
-				{
-					cp_scoreForRowChoice[i] += 50;
-				}
-				else
-				{
-
-					/* make slot available for worst case */
-					if (cp_scoreForRowChoice[i] < 5)
-					{
-						if (i <= 3)
-						{
-							cp_scoreForRowChoice[i] = 5;
-						}
-					}
-				}
-			}
-			else
-			{
-				if (tvals[i] == 0 && i >= row_3same) /* lower slot */
-				{
-					lowerMod = i - row_3same;
-					if (i == row_full_house)
-					{
-						lowerMod = -1;
-					}
-					cp_scoreForRowChoice[i] = 9 + lowerMod;
-				}
-			}
-		}
-		if (i >= 16)
-		{
-			cp_scoreForRowChoice[i] = -1;
-		}
-
-		/* lower slot giving more than 25 points? */
-
-		if (currentValue < 0 && i >= row_3same && i != row_full_house && i<row_chance)
-		{
-			if (tvals[i] >= 23)
-			{
-				cp_scoreForRowChoice[i] += 40;
-			}
-		}
+		cp_scoreForRowChoice[row_chance] = tvals[row_chance];
 	}
 
 	qsort(cp_sortedRerollRows, 18, 1, scoreSort);
 
-	// zeroing something important? take ones, twos & chance instead
+	noGoodRoll = (cp_sortedRerollRows[0] == row_chance && tvals[row_chance] < 20);
+	noGoodRoll |= (cp_sortedRerollRows[0] == row_3same && tvals[row_3same] < 12);
+	noGoodRoll |= (cp_sortedRerollRows[0] == row_4same && tvals[row_4same] < 16);
+	noGoodRoll |= (cp_sortedRerollRows[0] == row_sixes && tvals[row_sixes] < 18);
+	noGoodRoll |= (cp_sortedRerollRows[0] == row_fives && tvals[row_fives] < 15);
+	noGoodRoll |= (cp_sortedRerollRows[0] == row_fours && tvals[row_fours] < 12);
+	noGoodRoll |= (cp_sortedRerollRows[0] == row_threes && tvals[row_threes] < 9);
+	noGoodRoll |= (cp_sortedRerollRows[0] == row_kniffel && tvals[row_kniffel] == 0);
 
-	if (tvals[cp_sortedRerollRows[0]] == 0 &&
-		cp_sortedRerollRows[0] >= row_fours)
+	// use ones or twos as alternative chance if chance is bad
+	if (noGoodRoll)
 	{
-
 		if (currentValueForRow(row_ones) < 0)
 		{
 			return row_ones;
 		}
-
+		if (currentValueForRow(row_chance) < 0)
+		{
+			return row_chance;
+		}
 		if (currentValueForRow(row_twos) < 0)
 		{
 			return row_twos;
 		}
-
-		if (cp_scoreForRowChoice[row_chance] >= 10)
-		{
-			if (currentValueForRow(row_chance) < 0)
-			{
-				return row_chance;
-			}
-		}
-
-		if (!haveUpper && currentValueForRow(row_kniffel) < 0)
-		{
-			return row_kniffel;
-		}
-
-		/* last resort: if we can take anything that gives us
-		a value, we take that row */
-
-		for (i = row_ones; i <= row_chance; ++i)
-		{
-			if (i != row_lower_sum &&
-				i != row_overall_sum &&
-				i != row_upper_bonus &&
-				i != row_upper_sum &&
-				i != row_upper_total)
-			{
-				if (currentValueForRow(i) < 0)
-				{
-					cp_scoreForRowChoice[i] = tvals[i];
-				}
-				else
-				{
-					cp_scoreForRowChoice[i] = -1;
-				}
-			}
-		}
-
-		qsort(cp_sortedRerollRows, 18, 1, scoreSort);
 	}
 
-	if (cp_sortedRerollRows[0] == row_chance)
+	// zeroing something important?
+
+	if (tvals[cp_sortedRerollRows[0]] == 0)
 	{
-		if (!cp_haveBonus &&
-			pointsNeededForBonus > 3 &&
-			currentValueForRow(row_ones) < 0) {
-				return row_ones;
+
+		// no bonus?
+		if (pointsNeededForBonus > 0)
+		{
+			// possible to score something in the lower rows?
+			// --> take that row instead
+			for (i = row_3same; i <= row_chance; ++i)
+			{
+				if ((currentValueForRow(i) < 0) && tvals[i] > 0)
+				{
+					return i;
+				}
 			}
+		}
+		else
+		{ // already have upper bonus
+
+			for (i = row_ones; i <= row_sixes; ++i)
+			{
+				// something free in upper rows -> take it
+				if (currentValueForRow(i) < 0)
+				{
+					return i;
+				}
+			}
+		}
 	}
 
 	return cp_sortedRerollRows[0];
@@ -1167,22 +1130,23 @@ void debugDumpChoices()
 {
 	char i;
 	int earlyExitRow, exitRow;
-	;
+
+	textcolor(7);
 	cp_analyze();
 	earlyExitRow = cp_markDice();
 	gotoxy(0, 0);
 	for (i = 0; i < 18; ++i)
 	{
-		gotoxy(00, kc_rowForDataRow(i));
+		gotoxy(12, kc_rowForDataRow(i));
 		printf("%d ", cp_scoreForRowChoice[i]);
 	}
 	exitRow = cp_exitRow();
 	for (i = 0; i < 18; ++i)
 	{
-		gotoxy(10, kc_rowForDataRow(i));
+		gotoxy(15, kc_rowForDataRow(i));
 		printf("%d ", cp_scoreForRowChoice[i]);
 	}
-	gotoxy(0, 24);
+	gotoxy(10, 23);
 	if (earlyExitRow != -1)
 	{
 		revers(1);

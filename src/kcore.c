@@ -33,7 +33,7 @@ char _pname[4][20]; /* player names */
 char _numPlayers;
 char _numRounds;
 char _currentPlayer; /* the current player */
-char _currentRound;  /* the current round */
+char _currentRound;	 /* the current round */
 byte _quit;
 
 char numbuf[6];		/* general purpos number buffer */
@@ -519,7 +519,8 @@ void kc_recalcTVals(void)
 
 	for (row = 0; row < 18; row++)
 	{
-		if (kc_tableValue(row,_currentPlayer,_currentPlayer)!=-1) {
+		if (kc_tableValue(row, _currentPlayer, _currentPlayer) != -1)
+		{
 			tvals[row] = 0;
 		}
 	}
@@ -706,6 +707,19 @@ char kc_checkQuit()
 		}
 	}
 	return (unfinishedEntries == 0);
+}
+
+char kc_letterForRow(unsigned char row)
+{
+	if (row < 6)
+	{
+		return ('a' + row);
+	}
+	else if (row > 8 && row < 16)
+	{
+		return ('g' + (row - 9));
+	} 
+	return NULL;
 }
 
 char kc_rowForDataRow(unsigned char dataRow)

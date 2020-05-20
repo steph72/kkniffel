@@ -40,7 +40,6 @@
 
 #pragma warn(no-effect, off)
 
-
 #define BOTTOMY 24
 
 #ifdef __APPLE2__
@@ -249,7 +248,6 @@ void doTurnRoll()
 			doSingleRoll();
 		} while (kbhit() == 0);
 	}
-	srand(gSeed++);
 	doSingleRoll();
 	for (i = 0; i < 5; i++)
 	{
@@ -489,23 +487,16 @@ void displayBoard()
 	{
 		gotoxy(0, kc_rowForDataRow(i));
 		textcolor(colLegend);
-		if (i < 6)
+		if (kc_letterForRow(i))
 		{
 			revers(1);
-			cputc('a' + i);
-			revers(0);
-			cputc(' ');
-		}
-		else if (i > 8 && i < 16)
-		{
-			revers(1);
-			cputc('g' + (i - 9));
+			cputc(kc_letterForRow(i));
 			revers(0);
 			cputc(' ');
 		}
 		else
 		{
-			cprintf("  ");
+			cputs("  ");
 		}
 		textcolor(textcolorForRow(i));
 		cprintf(kc_labelForRow(i));
@@ -601,8 +592,8 @@ void showHighscores(char *title, unsigned char positions[], unsigned char save)
 	}
 	if (positions)
 	{
-#if defined(__PET__) || defined(__APPLE2__) 		
-revers(1);
+#if defined(__PET__) || defined(__APPLE2__)
+		revers(1);
 #endif
 		textcolor(colSplashRed);
 		for (j = 0; j < numPlayers; ++j)
@@ -614,15 +605,16 @@ revers(1);
 			}
 		}
 	}
-	#if defined(__PET__) || defined(__APPLE2__)
+#if defined(__PET__) || defined(__APPLE2__)
 	revers(0);
-	#endif
+#endif
 	textcolor(colLowerSum);
-	if (save) {
-		centerLine(24,"please wait, saving...");
+	if (save)
+	{
+		centerLine(24, "please wait, saving...");
 		saveHighscores();
 	}
-	centerLine(24,    "   - press any key -  ");
+	centerLine(24, "   - press any key -  ");
 	clearbuf();
 	cgetc();
 }
@@ -641,8 +633,11 @@ void startgame()
 	{
 		bannerDice();
 		textcolor(colText);
-
 		revers(1);
+#ifdef DEBUG
+		gotoxy(0, 0);
+		cputs("** debug build! **");
+#endif
 		centerLine(promptTopRow, (char *)gTitle);
 		revers(0);
 		centerLine(promptTopRow + 2, "- version 2.4 -");
@@ -1086,7 +1081,7 @@ void mainloop()
 #ifdef DEBUG
 				if (cmd == 'q')
 				{
-					kc_debugFill(15);
+					kc_debugFill(row_sixes);
 				}
 				if (cmd == '!')
 				{
@@ -1154,6 +1149,7 @@ void initGame()
 	gSeed = getJiffies();
 #endif
 
+	srand(gSeed);
 	benchmarkMode = false;
 	statTotal = 0;
 	numResults = 0;
