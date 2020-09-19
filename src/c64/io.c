@@ -49,8 +49,6 @@ void startup(void)
 
 void installCharset(void)
 {
-    unsigned char *adr1;
-    unsigned char *adr2;
     unsigned char *b;
     unsigned char i;
 
@@ -58,17 +56,9 @@ void installCharset(void)
 
     SEI();
     *procio = (*procio & 251);
-    adr2 = (unsigned char *)49152u;
-    adr1 = (unsigned char)
-    memcpy(0xc000,0xd000,4096);
-    /*
-    for (adr1 = (unsigned char *)53248u; adr1 <= (unsigned char *)57343u; ++adr1)
-    {
-        *b = (unsigned char)adr1;
-        *adr2 = *adr1;
-        ++adr2;
-    }
-    */
+
+    memcpy((const void*)0xc000,(const void*)0xd000,4096);
+
     *procio = (*procio | 4);
     *screenP = (unsigned char)200;
 

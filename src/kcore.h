@@ -85,7 +85,8 @@ void kc_recalcTVals(void); /* recalc temp values */
 
 void kc_commitRow(unsigned char row);
 
-char kc_rowForDataRow(unsigned char dataRow);
+char kc_rowForDataRow(unsigned char dataRow); // screen row for data row
+char kc_letterForRow(unsigned char row); // letter for row
 
 char kc_getNumTurnsForPlayer(unsigned char playerIdx);
 
@@ -94,7 +95,7 @@ byte currentDiceSum(void);
 
 #ifdef DEBUG
 void kc_debugFill(char num);
-char kc_setDiceValue(char diceIndex, char diceValue);
+void kc_setDiceValue(char diceIndex, char diceValue);
 #endif
 
 #endif

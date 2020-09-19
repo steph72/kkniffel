@@ -33,7 +33,7 @@ char _pname[4][20]; /* player names */
 char _numPlayers;
 char _numRounds;
 char _currentPlayer; /* the current player */
-char _currentRound;  /* the current round */
+char _currentRound;	 /* the current round */
 byte _quit;
 
 char numbuf[6];		/* general purpos number buffer */
@@ -246,7 +246,7 @@ int kc_incrementAndGetSessionCount()
 {
 	int num;
 	FILE *numfile;
-	numfile = fopen("kkcnt.dat", "rb");
+	numfile = fopen("kkcnt", "rb");
 	if (!numfile)
 	{
 		num = 0;
@@ -256,11 +256,13 @@ int kc_incrementAndGetSessionCount()
 		num = fgetc(numfile);
 		fclose(numfile);
 	}
-	numfile = fopen("kkcnt.dat", "wb");
+	numfile = fopen("kkcnt", "wb");
 	fputc(++num, numfile);
 	fclose(numfile);
 	return num;
 }
+
+#ifdef kkfiles
 
 void kc_removeCurrentState(char *fname)
 {
@@ -329,6 +331,8 @@ char kc_loadCurrentState(char *fname)
 	kc_recalcTVals();
 	return true;
 }
+
+#endif
 
 /************ core game functions ***********/
 
@@ -515,7 +519,8 @@ void kc_recalcTVals(void)
 
 	for (row = 0; row < 18; row++)
 	{
-		if (kc_tableValue(row,_currentPlayer,_currentPlayer)!=-1) {
+		if (kc_tableValue(row, _currentPlayer, _currentPlayer) != -1)
+		{
 			tvals[row] = 0;
 		}
 	}
@@ -605,7 +610,7 @@ char kc_diceValue(char diceIndex)
 }
 
 #ifdef DEBUG
-char kc_setDiceValue(char diceIndex, char diceValue)
+void kc_setDiceValue(char diceIndex, char diceValue)
 {
 	dvalues[diceIndex] = diceValue;
 }
@@ -702,6 +707,19 @@ char kc_checkQuit()
 		}
 	}
 	return (unfinishedEntries == 0);
+}
+
+char kc_letterForRow(unsigned char row)
+{
+	if (row < 6)
+	{
+		return ('a' + row);
+	}
+	else if (row > 8 && row < 16)
+	{
+		return ('g' + (row - 9));
+	} 
+	return NULL;
 }
 
 char kc_rowForDataRow(unsigned char dataRow)
