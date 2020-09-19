@@ -1033,7 +1033,7 @@ void debugSetRoll()
 	cputs("                      ");
 	kc_recalcTVals();
 	refreshTvalsDisplay();
-	debugDumpChoices();
+	// debugDumpChoices();
 }
 #endif
 
@@ -1089,7 +1089,7 @@ void mainloop()
 				}
 				if (cmd == '?')
 				{
-					debugDumpChoices();
+					// debugDumpChoices();
 				}
 				if (cmd == '#')
 				{

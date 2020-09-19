@@ -6,7 +6,7 @@ int cp_markDice(void);
 int cp_exitRow(void);
 
 #ifdef DEBUG
-void debugDumpChoices();
+// void debugDumpChoices();
 #endif
 
 #endif
