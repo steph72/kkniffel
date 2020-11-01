@@ -604,7 +604,7 @@ char *kc_labelForRow(char rowIdx)
 	return (char *)rownames[rowIdx];
 }
 
-char kc_diceValue(char diceIndex)
+byte kc_diceValue(char diceIndex)
 {
 	return dvalues[diceIndex];
 }

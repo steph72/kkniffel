@@ -35,7 +35,7 @@ extern char _currentRound;
 extern char _numPlayers;
 extern char _numRounds;
 extern char _pname[4][20];
-extern char _quit;
+extern byte _quit;
 
 extern char numbuf[6];
 
