@@ -46,25 +46,14 @@ int tvals[18]; /* temporary table values (for wizard) */
 
 byte numRolls;
 
-#ifdef _german_
 
-const char *rownames[] = {"einer", "zweier", "dreier",
-						  "vierer", "fuenfer", "sechser",
-						  "summe o", "bonus", "gesamt",
-						  "3erpasch", "4erpasch", "kl. str.", "gr. str.",
-						  "f. house", "kniffel", "scheiss",
-						  "summe u", "gesamt"};
+const char *rownames[] = {"Aces", "Twos", "Threes",
+						  "Fours", "Fives", "Sixes",
+						  "Upper Sum", "Bonus", "Total",
+						  "3 of a kind", "4 of a kind", "Sm. Straight", "Lg. Straight",
+						  "Full House", "Yahtzee", "Chance",
+						  "Lower Sum", "Total"};
 
-#else
-
-const char *rownames[] = {"aces", "twos", "threes",
-						  "fours", "fives", "sixes",
-						  "sum up", "bonus", "total",
-						  "3ofakind", "4ofakind", "sm. str.", "lg. str.",
-						  "f. house", "yahtzee", "chance",
-						  "sum low", "total"};
-
-#endif
 
 /* -------------------- private functions ------------------------- */
 

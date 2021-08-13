@@ -122,7 +122,7 @@ void analyzeUpperRows(void)
 
 void analyzeSameKind(void)
 {
-	char row, i;
+	char row;
 	char dCountCheck;
 	int currentValue;
 	int sameDiceValue;

@@ -22,7 +22,6 @@
 
 	*/
 
-#include <conio.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,31 +33,15 @@
 #include "kcore.h"
 #include "cplayer.h"
 #include "highscores.h"
+#include "congui.h"
 
 #define MAX_ROLL_COUNT 3
 #define MAX_ROUNDS 50
 
-#pragma warn(no-effect, off)
-
 #define BOTTOMY 24
-
-#ifdef __APPLE2__
-#undef BOTTOMY
-#define BOTTOMY 23
-#endif
-
-#ifdef __CX16__
-#undef BOTTOMY
-#define BOTTOMY 29
-#endif
-
-#ifdef __APPLE2__
-#define DELETEKEY 8
-#define RETURNKEY 13
-#else
+#define MID_X 40
 #define DELETEKEY 20
 #define RETURNKEY '\n'
-#endif
 
 void refreshTvalsDisplay(void);
 void removeTvalDisplay(void); // remove tval display
@@ -66,8 +49,6 @@ void plotDiceLegend(unsigned char flag);
 
 unsigned int gSeed;
 unsigned int gSessionCount;
-
-char inbuf[40];
 
 int roundResults[MAX_ROUNDS][4]; // results for postgame
 int totals[4];					 // totals per player for postgame
@@ -98,82 +79,53 @@ unsigned int getJiffies()
 
 void clearLower(void)
 {
-	gotoxy(0, BOTTOMY);
-#ifdef __APPLE2__
-	chline(g_xmax);
-#else
-	cputs("                                  ");
-#endif
+	cg_gotoxy(0, BOTTOMY);
+	cg_puts("                                  ");
 }
 
 void centerLine(char line, char *msg)
 {
-	gotoxy(20 - (strlen(msg) / 2), line);
-	cputs(msg);
+	cg_gotoxy(MID_X - (strlen(msg) / 2), line);
+	cg_puts(msg);
 }
 
 void centerLower(char *msg)
 {
 	clearLower();
-	gotoxy((g_xmax / 2) - (strlen(msg) / 2), BOTTOMY);
-#ifdef __APPLE2__
-	revers(1);
-#endif
-	cputs(msg);
-#ifdef __APPLE2__
-	revers(0);
-#endif
-	gotoxy(0, 0);
-}
-
-void clearbuf(void)
-{
-	while (kbhit())
-		cgetc();
+	cg_gotoxy((g_xmax / 2) - (strlen(msg) / 2), BOTTOMY);
+	cg_revers(1);
+	cg_puts(msg);
+	cg_revers(0);
+	cg_gotoxy(0, 0);
 }
 
 void waitkey(char key)
 {
-	clearbuf();
-	while (cgetc() != key)
+	while (cg_getkey() != key)
 		;
 }
 
-#ifndef __APPLE2__
-#define DICELEGEND_POS 34
-#else
-#define DICELEGEND_POS 33
-#endif
+#define DICELEGEND_POS 73
 
-#ifndef __CX16__
 void plotDiceLegend(unsigned char flag)
 {
 	unsigned char i;
-	textcolor(colLegend);
-	revers(flag);
+	cg_textcolor(colLegend);
+	cg_revers(flag);
 	for (i = 0; i < 5; ++i)
 	{
-		gotoxy(DICELEGEND_POS, (i * 5) + 2);
+		cg_gotoxy(DICELEGEND_POS, (i * 5) + 2);
 		if (flag)
 		{
-			cputc('1' + i);
+			cg_putc('1' + i);
 		}
 		else
 		{
-			cputc(' ');
+			cg_putc(' ');
 		}
 	}
-
-	/*  we need to place the cursor on an empty space
-	    after marking the dice keys in reverse
-	    due to a strange bug in the plus/4 conio, where 
-	    stopping reverse mode also resets the colour
-	    under the cursor...                             */
-
-	gotoxy(33, (i * 5) + 2);
-	revers(0);
+	cg_revers(0);
 }
-#endif
 
 void doSingleRoll()
 {
@@ -206,7 +158,7 @@ void showCurrentRoll()
 void eraseDice()
 {
 	unsigned char i;
-	revers(0);
+	cg_revers(0);
 	for (i = 0; i < 5; i++)
 	{
 		eraseDie(i);
@@ -220,7 +172,6 @@ void doTurnRoll()
 	clearLower();
 	removeTvalDisplay();
 	showCurrentRoll();
-	clearbuf();
 	if (kc_getIsComputerPlayer(_currentPlayer))
 	{
 		if (!benchmarkMode)
@@ -246,7 +197,7 @@ void doTurnRoll()
 		do
 		{
 			doSingleRoll();
-		} while (kbhit() == 0);
+		} while (cg_kbhit() == 0);
 	}
 	doSingleRoll();
 	for (i = 0; i < 5; i++)
@@ -256,7 +207,6 @@ void doTurnRoll()
 	kc_recalcTVals();
 	refreshTvalsDisplay();
 	kc_newRoll();
-	clearbuf();
 }
 
 void input(char *buf)
@@ -265,26 +215,26 @@ void input(char *buf)
 	char currentPos;
 	currentPos = 0;
 	buf[0] = 0;
-	cursor(1);
+	cg_cursor(1);
 	do
 	{
-		currentChar = cgetc();
+		currentChar = cg_getkey();
 		if (currentChar != RETURNKEY && currentChar != DELETEKEY)
 		{
 			buf[currentPos] = currentChar;
-			cputc(currentChar);
+			cg_putc(currentChar);
 			currentPos++;
 		}
 		if (currentChar == DELETEKEY && currentPos > 0)
 		{
 			currentPos--;
-			gotox(wherex() - 1);
-			cputc(' ');
-			gotox(wherex() - 1);
+			cg_gotoxy(cg_wherex() - 1, cg_wherey());
+			cg_putc(' ');
+			cg_gotoxy(cg_wherex() - 1, cg_wherey());
 		}
 	} while (currentChar != RETURNKEY);
 	buf[currentPos] = 0;
-	cursor(0);
+	cg_cursor(0);
 }
 
 char textcolorForRow(char i)
@@ -315,7 +265,7 @@ char textcolorForRow(char i)
 
 char columnForPlayer(unsigned char p)
 {
-	return (12 + (p * (namelength + 1)));
+	return (16 + (p * (namelength + 1)));
 }
 
 void displayTableEntry(char player, char row, int value, char temp)
@@ -324,20 +274,16 @@ void displayTableEntry(char player, char row, int value, char temp)
 
 	if (temp)
 	{
-#if defined(__PET__) || defined(__APPLE2__)
-		revers(value > 0);
-#else
 		color = colTempValue;
-#endif
 	}
 	else
 	{
 		color = textcolorForRow(row);
 	}
-	textcolor(color);
+	cg_textcolor(color);
 	itoa(value, numbuf, 10);
-	gotoxy(columnForPlayer(player) + namelength - 2, kc_rowForDataRow(row));
-	cputs("  ");
+	cg_gotoxy(columnForPlayer(player) + namelength - 2, kc_rowForDataRow(row));
+	cg_puts("  ");
 	if (value == 0 && temp)
 	{
 		return;
@@ -346,8 +292,8 @@ void displayTableEntry(char player, char row, int value, char temp)
 	{
 		return;
 	}
-	gotoxy(columnForPlayer(player) + namelength - strlen(numbuf), kc_rowForDataRow(row));
-	cputs(numbuf);
+	cg_gotoxy(columnForPlayer(player) + namelength - strlen(numbuf), kc_rowForDataRow(row));
+	cg_puts(numbuf);
 }
 
 void refreshTvalsDisplay(void)
@@ -402,8 +348,8 @@ void updatePlayer(unsigned char row)
 	unsigned char i, j, t, centerS;
 	for (i = 0; i < numPlayers; i++)
 	{
-		textcolor(colLegend);
-		gotoxy(columnForPlayer(i), row);
+		cg_textcolor(colLegend);
+		cg_gotoxy(columnForPlayer(i), row);
 		j = strlen(_pname[i]);
 		if (j > namelength)
 			j = namelength;
@@ -411,16 +357,16 @@ void updatePlayer(unsigned char row)
 		{
 			for (centerS = 0; centerS < ((namelength - j) / 2); centerS++)
 			{
-				cputc(' ');
+				cg_putc(' ');
 			}
 		}
 		if (i == _currentPlayer && row == 0)
-			revers(1);
+			cg_revers(1);
 		for (t = 0; t < j; t++)
 		{
-			cputc(_pname[i][t]);
+			cg_putc(_pname[i][t]);
 		}
-		revers(0);
+		cg_revers(0);
 	}
 }
 
@@ -432,74 +378,66 @@ void displayBoard()
 	if (benchmarkMode)
 		return;
 
-	g_xmax = 11 + (numPlayers * (namelength + 1));
+	g_xmax = 16 + (numPlayers * (namelength + 1));
 
-	clrscr();
-	textcolor(colTable);
+	cg_clrscr();
+	cg_textcolor(colTable);
 	// horizontal lines
-	gotoxy(0, 1);
-	chline(g_xmax);
-	gotoxy(0, 8);
-	chline(g_xmax);
-	gotoxy(0, 12);
-	chline(g_xmax);
-	gotoxy(0, 20);
-	chline(g_xmax);
-	gotoxy(0, 23);
-	chline(g_xmax);
+	/*
+	hline(0,1,40,HLINE_STYLE_MID);
+	hline(0,8,40,HLINE_STYLE_MID);
+	hline(0,12,40,HLINE_STYLE_MID);
+	hline(0,20,40,HLINE_STYLE_MID);
+	hline(0,23,40,HLINE_STYLE_MID);
+	*/
 	// player columns
 	for (i = 0; i < numPlayers; i++)
 	{
 		lineCol = columnForPlayer(i) - 1;
-		gotoxy(lineCol, 0);
-		cvline(23);
-#ifndef __APPLE2__
-		gotoxy(lineCol, 1);
-		cputc(123);
-		gotoxy(lineCol, 8);
-		cputc(123);
-		gotoxy(lineCol, 12);
-		cputc(123);
-		gotoxy(lineCol, 20);
-		cputc(123);
-		gotoxy(lineCol, 23);
-		cputc(241);
-#endif
+		cg_gotoxy(lineCol, 0);
+		// cvline(23);
+		cg_gotoxy(lineCol, 1);
+		cg_putc(123);
+		cg_gotoxy(lineCol, 8);
+		cg_putc(123);
+		cg_gotoxy(lineCol, 12);
+		cg_putc(123);
+		cg_gotoxy(lineCol, 20);
+		cg_putc(123);
+		cg_gotoxy(lineCol, 23);
+		cg_putc(241);
 	}
-	gotoxy(g_xmax, 0);
-	cvline(23);
-#ifndef __APPLE2__
-	gotoxy(g_xmax, 1);
-	cputc(179);
-	gotoxy(g_xmax, 8);
-	cputc(179);
-	gotoxy(g_xmax, 12);
-	cputc(179);
-	gotoxy(g_xmax, 20);
-	cputc(179);
-	gotoxy(g_xmax, 23);
-	cputc(253);
-#endif
-
+	cg_gotoxy(g_xmax, 0);
+	// cvline(23);
+	cg_gotoxy(g_xmax, 1);
+	cg_putc(179);
+	cg_gotoxy(g_xmax, 8);
+	cg_putc(179);
+	cg_gotoxy(g_xmax, 12);
+	cg_putc(179);
+	cg_gotoxy(g_xmax, 20);
+	cg_putc(179);
+	cg_gotoxy(g_xmax, 23);
+	cg_putc(253);
 	updatePlayer(0);
 	// rows
 	for (i = 0; i < 18; i++)
 	{
-		gotoxy(0, kc_rowForDataRow(i));
-		textcolor(colLegend);
+		cg_gotoxy(0, kc_rowForDataRow(i));
+		cg_textcolor(colLegend);
 		if (kc_letterForRow(i))
 		{
-			revers(1);
-			cputc(kc_letterForRow(i));
-			revers(0);
-			cputc(' ');
+			cg_revers(1);
+			cg_putc(kc_letterForRow(i));
+			cg_revers(0);
+			cg_putc(' ');
 		}
 		else
 		{
-			cputs("  ");
+			cg_puts("  ");
 		}
-		textcolor(textcolorForRow(i));
-		cprintf(kc_labelForRow(i));
+		cg_textcolor(textcolorForRow(i));
+		cg_printf(kc_labelForRow(i));
 	}
 	initDiceDisplay();
 }
@@ -518,37 +456,37 @@ void startBenchmarkMode()
 		kc_setIsComputerPlayer(i, true);
 		strcpy(_pname[i], "cp");
 	}
-	clrscr();
-	cputs("** benchmark mode **");
-	gotoxy(0, 3);
-	cputs("press alphanumeric key for\r\nrandom seed: ");
-	cursor(1);
-	gSeed = cgetc() * 555;
-	cprintf("-> %u\r\n", seed);
-	cursor(0);
-	cputs("\r\nrunning kkniffelbench...");
+	cg_clrscr();
+	cg_puts("** benchmark mode **");
+	cg_gotoxy(0, 3);
+	cg_puts("press alphanumeric key for\r\nrandom seed: ");
+	cg_cursor(1);
+	gSeed = cg_getkey() * 555;
+	cg_printf("-> %u\r\n", seed);
+	cg_cursor(0);
+	cg_puts("\r\nrunning kkniffelbench...");
 }
 
 void bannerDice()
 {
 	char i;
-	textcolor(colDice);
+	cg_textcolor(colDice);
 
-	clrscr();
+	cg_clrscr();
 	for (i = 0; i < 8; ++i)
 	{
-		_plotDice(1 + (rand() % 6), i * 5, 0, 0);
-		_plotDice(1 + (rand() % 6), i * 5, BOTTOMY - 4, 0);
+		_plotDice(1 + (i % 6), i * 5, 0, 0);
+		_plotDice(1 + (i % 6), i * 5, BOTTOMY - 4, 0);
 	}
 }
 
 void displayCredits()
 {
 	bannerDice();
-	textcolor(colText);
-	revers(1);
+	cg_textcolor(colText);
+	cg_revers(1);
 	centerLine(5, " * k k n i f f e l * ");
-	revers(0);
+	cg_revers(0);
 	centerLine(7, "written by stephan kleinert");
 	centerLine(8, "at k-burg, bad honnef,");
 	centerLine(9, "hundehaus im reinhardswald and");
@@ -558,23 +496,23 @@ void displayCredits()
 	centerLine(14, "frau k., buba k. candor k.");
 	centerLine(15, "and the seven turtles!");
 	centerLine(17, "-- key --");
-	cgetc();
+	cg_getkey();
 }
 
 void displayInstructions()
 {
 	bannerDice();
-	textcolor(colText);
-	revers(1);
+	cg_textcolor(colText);
+	cg_revers(1);
 	centerLine(5, " * instructions * ");
-	revers(0);
+	cg_revers(0);
 	centerLine(7, "game keys:");
 	centerLine(9, "<return> to roll or reroll the dice");
 	centerLine(11, "<1-6> to select dice to reroll");
 	centerLine(12, "<a-m> to choose category to score");
 	centerLine(14, "<s> to sort the dice");
 	centerLine(16, "-- key --");
-	cgetc();
+	cg_getkey();
 }
 
 void showHighscores(char *title, unsigned char positions[], unsigned char save)
@@ -582,20 +520,18 @@ void showHighscores(char *title, unsigned char positions[], unsigned char save)
 	int i;
 	int j;
 	int pos;
-	clrscr();
-	textcolor(colBonus);
+	cg_clrscr();
+	cg_textcolor(colBonus);
 	centerLine(0, title);
-	textcolor(colText);
+	cg_textcolor(colText);
 	for (i = 1; i <= HS_LISTSIZE; ++i)
 	{
 		centerLine(1 + (2 * i), highscoreAtPos(i));
 	}
 	if (positions)
 	{
-#if defined(__PET__) || defined(__APPLE2__)
-		revers(1);
-#endif
-		textcolor(colSplashRed);
+
+		cg_textcolor(colSplashRed);
 		for (j = 0; j < numPlayers; ++j)
 		{
 			pos = positions[j];
@@ -605,24 +541,22 @@ void showHighscores(char *title, unsigned char positions[], unsigned char save)
 			}
 		}
 	}
-#if defined(__PET__) || defined(__APPLE2__)
-	revers(0);
-#endif
-	textcolor(colLowerSum);
+
+	cg_textcolor(colLowerSum);
 	if (save)
 	{
 		centerLine(24, "please wait, saving...");
 		saveHighscores();
 	}
 	centerLine(24, "   - press any key -  ");
-	clearbuf();
-	cgetc();
+	cg_getkey();
 }
 
 void startgame()
 {
 	char i;
 	char c;
+	char *strbuf;
 	char promptTopRow;
 	char sessionCountRow[40];
 
@@ -632,26 +566,26 @@ void startgame()
 	do
 	{
 		bannerDice();
-		textcolor(colText);
-		revers(1);
+		cg_textcolor(colText);
+		cg_revers(1);
 #ifdef DEBUG
 		gotoxy(0, 0);
 		cputs("** debug build! **");
 #endif
 		centerLine(promptTopRow, (char *)gTitle);
-		revers(0);
+		cg_revers(0);
 		centerLine(promptTopRow + 2, "- version 2.4 -");
 		centerLine(promptTopRow + 3, "written by stephan kleinert");
-		textcolor(colBonus);
+		cg_textcolor(colBonus);
 		centerLine(promptTopRow + 10, "or i)instructions c)redits h)ighscores");
-		textcolor(colLowerSum);
+		cg_textcolor(colLowerSum);
 		centerLine(promptTopRow + 6, sessionCountRow);
 		centerLine(promptTopRow + 7, "how many players (2-4)?");
 
-		cursor(1);
-		c = tolower(cgetc());
+		cg_cursor(1);
+		c = tolower(cg_getkey());
 		numPlayers = c - '0';
-		cursor(0);
+		cg_cursor(0);
 		if (c == 'i')
 		{
 			displayInstructions();
@@ -671,59 +605,56 @@ void startgame()
 		}
 	} while (numPlayers < 2 || numPlayers > 4);
 
-	clrscr();
+	cg_clrscr();
 
-#ifdef __CX16__
-#define TABLE_WIDTH 27
-#else
-#define TABLE_WIDTH 21
-#endif
+#define TABLE_WIDTH 50
 
 	namelength = (TABLE_WIDTH / numPlayers) - 1;
 	namelength = (TABLE_WIDTH / numPlayers) - 1;
 
-	cputsxy(0, 20, "(add '@' to player name to\r\ncreate a computer player!)");
+	cg_putsxy(0, 20, "(add '@' to player name to\r\ncreate a computer player!)");
 
 	for (i = 0; i < numPlayers; i++)
 	{
-		gotoxy(0, 12 + i);
-		do
-		{
-			cprintf("player %d name: ", i + 1);
-			input(inbuf);
-			if (strlen(inbuf) == 0)
+		cg_gotoxy(0, 12 + i);
+		//do
+		//{
+			cg_printf("player %d name: ", i + 1);
+			strbuf=cg_input(16);
+			if (strlen(strbuf) == 0)
 			{
 				if (i == 0)
 				{
-					cprintf("-> katja @");
-					strcpy(inbuf, "katja @");
+					cg_printf("-> katja @");
+					strcpy(strbuf, "katja @");
 				}
 				if (i == 1)
 				{
-					cprintf("-> stephan @");
-					strcpy(inbuf, "stephan @");
+					cg_printf("-> stephan @");
+					strcpy(strbuf, "stephan @");
 				}
 				if (i == 2)
 				{
-					cprintf("-> buba @");
-					strcpy(inbuf, "buba @");
+					cg_printf("-> buba @");
+					strcpy(strbuf, "buba @");
 				}
 				if (i == 3)
 				{
-					cprintf("-> schnitzel @");
-					strcpy(inbuf, "schnitzel @");
+					cg_printf("-> schnitzel @");
+					strcpy(strbuf, "schnitzel @");
 				}
 			}
-		} while (strlen(inbuf) == 0);
-		if (strchr(inbuf, '@'))
+		// } while (strlen(strbuf) == 0);
+		if (strchr(strbuf, '@'))
 		{
-			cputs(" (cp) ");
+			cg_puts(" (cp) ");
 			kc_setIsComputerPlayer(i, true);
 		}
-		strcpy(_pname[i], inbuf);
+		strcpy(_pname[i], strbuf);
+		free(strbuf);
 	}
 
-	cursor(0);
+	cg_cursor(0);
 }
 
 char shouldCommitRow(unsigned char row)
@@ -735,7 +666,7 @@ char shouldCommitRow(unsigned char row)
 	}
 	clearLower();
 	centerLower("really? zero points (y/n)?!");
-	jn = tolower(cgetc());
+	jn = tolower(cg_getkey());
 	clearLower();
 	return (jn == 'y');
 }
@@ -757,8 +688,8 @@ void doNextPlayer()
 
 	updatePlayer(0);
 	eraseDice();
-	gotoxy(0, 0);
-	cputs("          ");
+	cg_gotoxy(0, 0);
+	cg_puts("          ");
 	if (!kc_getIsComputerPlayer(_currentPlayer))
 	{
 		centerLower("<return> = start rolling");
@@ -796,16 +727,16 @@ void commitRow(unsigned char row)
 		for (i = 0; i < 6; ++i)
 		{
 			rOn = !rOn;
-			revers(rOn);
+			cg_revers(rOn);
 			displayTableEntry(_currentPlayer, row, kc_tableValue(row, _currentPlayer, 0), 0);
 			jiffySleep(5);
 		}
-		revers(0);
+		cg_revers(0);
 	}
 	else
 	{
-		gotoxy(28, 0);
-		cprintf("[%d/%d]", ++benchmarkRolls, benchmarkRollsToDo);
+		cg_gotoxy(28, 0);
+		cg_printf("[%d/%d]", ++benchmarkRolls, benchmarkRollsToDo);
 	}
 
 	checkQuit();
@@ -821,7 +752,7 @@ int pcomp(const void *a, const void *b)
 	int resA;
 	int resB;
 
-	cputs("FOOOOOO!");
+	cg_puts("FOOOOOO!");
 
 	resA = kc_tableValue(17, *(unsigned char *)a, 0);
 	resB = kc_tableValue(17, *(unsigned char *)b, 0);
@@ -862,7 +793,7 @@ void postRound()
 
 	qsort(sortedPlayers, numPlayers, 1, pcomp);
 
-	textcolor(colText);
+	cg_textcolor(colText);
 	for (j = 0; j < numPlayers; j++)
 	{
 		i = sortedPlayers[j];
@@ -886,53 +817,52 @@ void postRound()
 		showHighscores("new highscores!", newHighscorePositions, true);
 	}
 
-	clrscr();
-	cprintf("*** round finished! ***\r\n\r\n");
+	cg_clrscr();
+	cg_printf("*** round finished! ***\r\n\r\n");
 
-	resultsTop = wherey() + 4;
-	updatePlayer(wherey() + 2);
+	resultsTop = cg_wherey() + 4;
+	updatePlayer(cg_wherey() + 2);
 
 	for (i = 0; i <= currentRound; i++)
 	{
-		gotoxy(0, resultsTop + i);
-		cprintf("round %d", i + 1);
+		cg_gotoxy(0, resultsTop + i);
+		cg_printf("round %d", i + 1);
 		for (j = 0; j < numPlayers; j++)
 		{
 			res = roundResults[i][j];
 			if (res > 250)
 			{
-				textcolor(colLowerSum);
+				cg_textcolor(colLowerSum);
 			}
-			gotoxy(columnForPlayer(j), resultsTop + i);
-			cprintf("%d", res);
+			cg_gotoxy(columnForPlayer(j), resultsTop + i);
+			cg_printf("%d", res);
 			totals[j] = totals[j] + res;
-			textcolor(colText);
+			cg_textcolor(colText);
 		}
 	}
-	gotoxy(0, resultsTop + 2 + currentRound);
+	cg_gotoxy(0, resultsTop + 2 + currentRound);
 
 	if (benchmarkMode)
 	{
-		gotoxy(0, 0);
-		cprintf("\r\n#%d avg %d     ", numResults, statTotal / numResults);
+		cg_gotoxy(0, 0);
+		cg_printf("\r\n#%d avg %d     ", numResults, statTotal / numResults);
 	}
 	else
 	{
-		cputs("total");
+		cg_puts("total");
 		for (j = 0; j < numPlayers; j++)
 		{
-			gotoxy(columnForPlayer(j), resultsTop + currentRound + 2);
-			cprintf("%d", totals[j]);
+			cg_gotoxy(columnForPlayer(j), resultsTop + currentRound + 2);
+			cg_printf("%d", totals[j]);
 		}
 	}
 
-	gotoxy(0, resultsTop + currentRound + 5);
+	cg_gotoxy(0, resultsTop + currentRound + 5);
 
 	if (!benchmarkMode)
 	{
-		cputs("another game? (y/n)");
-		clearbuf();
-		jn = tolower(cgetc());
+		cg_puts("another game? (y/n)");
+		jn = tolower(cg_getkey());
 		if (jn != 'n')
 		{
 			quit = false;
@@ -982,7 +912,7 @@ void doCP()
 	if (!benchmarkMode)
 	{
 		jiffySleep(80);
-		gotoxy(0, 0);
+		cg_gotoxy(0, 0);
 		clearLower();
 	}
 
@@ -1054,11 +984,10 @@ void mainloop()
 		{
 			if (!benchmarkMode)
 			{
-				gotoxy(0, 0);
-				textcolor(colCurrentRollIdx);
-				cprintf("(roll %d/%d)", kc_getRollCount(), MAX_ROLL_COUNT);
+				cg_gotoxy(0, 0);
+				cg_textcolor(colCurrentRollIdx);
+				cg_printf("(roll %d/%d)", kc_getRollCount(), MAX_ROLL_COUNT);
 				plotDiceLegend(kc_getRollCount() < MAX_ROLL_COUNT);
-				clearbuf();
 			}
 
 			if (kc_getIsComputerPlayer(_currentPlayer))
@@ -1077,7 +1006,7 @@ void mainloop()
 					centerLower("[a-m]");
 				}
 
-				cmd = tolower(cgetc());
+				cmd = tolower(cg_getkey());
 #ifdef DEBUG
 				if (cmd == 'q')
 				{
@@ -1143,33 +1072,25 @@ void mainloop()
 
 void initGame()
 {
-	startup();
+	cg_init(true,false,NULL);
 
-#ifndef __APPLE2__
 	gSeed = getJiffies();
-#endif
-
 	srand(gSeed);
 	benchmarkMode = false;
 	statTotal = 0;
 	numResults = 0;
-	gotoxy(0, 0);
+	cg_gotoxy(0, 0);
 
-#ifdef __CBM__
-	cputs("stephan   katja");
-	textcolor(COLOR_RED);
-	gotoxy(8, 0);
-	cputc(211);
-	gotoxy(0, 2);
-#else
-	cputs("stephan <3 katja");
-#endif
+	cg_puts("stephan   katja");
+	cg_textcolor(2);
+	cg_gotoxy(8, 0);
+	cg_putc(211);
+	cg_gotoxy(0, 2);
 
 	gSessionCount = kc_incrementAndGetSessionCount();
-	clrscr();
+	cg_clrscr();
 	initHighscores();
-	initIO();
-	clrscr();
+	cg_clrscr();
 }
 
 int main()
