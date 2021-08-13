@@ -79,7 +79,7 @@ unsigned int getJiffies()
 
 void clearLower(void)
 {
-	cg_block_raw(0,BOTTOMY,79,BOTTOMY,32,0);
+	cg_block_raw(0, BOTTOMY, 79, BOTTOMY, 32, 0);
 }
 
 void centerLine(char line, char *msg)
@@ -91,6 +91,7 @@ void centerLine(char line, char *msg)
 void centerLower(char *msg)
 {
 	clearLower();
+	cg_textcolor(14);
 	cg_gotoxy((79 / 2) - (strlen(msg) / 2), BOTTOMY);
 	cg_revers(1);
 	cg_puts(msg);
@@ -554,7 +555,7 @@ void startgame()
 	char promptTopRow;
 	char sessionCountRow[40];
 
-	sprintf(sessionCountRow, "k-cottage session #%d", gSessionCount);
+	sprintf(sessionCountRow, "session #%d", gSessionCount);
 	promptTopRow = (BOTTOMY / 2) - 5;
 
 	do
@@ -568,13 +569,13 @@ void startgame()
 #endif
 		centerLine(promptTopRow, (char *)gTitle);
 		cg_revers(0);
-		centerLine(promptTopRow + 2, "- version 2.4 -");
-		centerLine(promptTopRow + 3, "written by stephan kleinert");
+		centerLine(promptTopRow + 2, "- Version 3.0 -");
+		centerLine(promptTopRow + 3, "Written by Stephan Kleinert");
 		cg_textcolor(colBonus);
-		centerLine(promptTopRow + 10, "or i)instructions c)redits h)ighscores");
+		centerLine(promptTopRow + 10, "or I)instructions C)redits H)ighscores");
 		cg_textcolor(colLowerSum);
 		centerLine(promptTopRow + 6, sessionCountRow);
-		centerLine(promptTopRow + 7, "how many players (2-4)?");
+		centerLine(promptTopRow + 7, "How many players (2-4)?");
 
 		cg_cursor(1);
 		c = tolower(cg_getkey());
@@ -676,6 +677,8 @@ void updateSumDisplay()
 
 void doNextPlayer()
 {
+	char buf[32];
+
 	kc_newTurn();
 	if (benchmarkMode)
 		return;
@@ -686,7 +689,8 @@ void doNextPlayer()
 	cg_puts("          ");
 	if (!kc_getIsComputerPlayer(_currentPlayer))
 	{
-		centerLower("<return> = start rolling");
+		sprintf(buf, "%s's turn. <return> = start rolling", _pname[_currentPlayer]);
+		centerLower(buf);
 		waitkey(RETURNKEY);
 	}
 	doTurnRoll();
@@ -993,11 +997,11 @@ void mainloop()
 
 				if (kc_getRollCount() < 3)
 				{
-					centerLower("[a-m] or [1-5 + ret]");
+					centerLower("Press [a-m] to score, or [1-5 + return] to reroll");
 				}
 				else
 				{
-					centerLower("[a-m]");
+					centerLower("Press [a-m] to score");
 				}
 
 				cmd = tolower(cg_getkey());
@@ -1028,7 +1032,7 @@ void mainloop()
 				}
 				if (cmd == ' ' && kc_getRollCount() < 3)
 				{
-					centerLower("katja-move!");
+					centerLower("The famous Katja move!");
 					for (idx = 0; idx < 5; ++idx)
 					{
 						kc_setShouldRoll(idx, true);

@@ -7,9 +7,12 @@
 ### In order to override defaults - values can be assigned to the variables ###
 ###############################################################################
 
+BUILDDATE := $(shell date -Iminutes)
+BUILDNUM := $(shell cat BUILDIDX)
+VERSION = 0.1a
+
 # Space or comma separated list of cc65 supported target platforms to build for.
 # Default: c64 (lowercase!)
-#TARGETS := apple2
 TARGETS := c64
 
 # Name of the final, single-file executable.
@@ -28,8 +31,13 @@ CONFIG  :=
 
 # Additional C compiler flags and options.
 # Default: none
-CFLAGS =
-#CFLAGS  = -DDEBUG
+#CFLAGS += -DDEBUG
+#CFLAGS += -Osir
+#CFLAGS += --check-stack
+CFLAGS += --cpu 65C02
+CFLAGS += -DDRE_DATE="\"$(BUILDDATE)\""
+CFLAGS += -DDRE_VERSION="\"$(VERSION)\""
+CFLAGS += -DDRE_BUILDNUM="\"$(BUILDNUM)\""
 
 # Additional assembler flags and options.
 # Default: none
@@ -37,11 +45,13 @@ ASFLAGS =
 
 # Additional linker flags and options.
 # Default: none
-LDFLAGS = 
+LDFLAGS =
 
 # Path to the directory containing C and ASM sources.
 # Default: src
 SRCDIR :=
+
+DRVDIR := drivers
 
 # Path to the directory where object files are to be stored (inside respective target subdirectories).
 # Default: obj
@@ -49,7 +59,7 @@ OBJDIR :=
 
 # Command used to run the emulator.
 # Default: depending on target platform. For default (c64) target: x64 -kernal kernal -VICIIdsize -autoload
-EMUCMD :=
+EMUCMD := xemu-xmega65 -besure -8 
 
 # Optional commands used before starting the emulation process, and after finishing it.
 # Default: none
@@ -58,7 +68,9 @@ EMUCMD :=
 #PREEMUCMD := osascript -e "tell application \"X11\" to activate"
 #POSTEMUCMD := osascript -e "tell application \"System Events\" to tell process \"X11\" to set visible to false"
 #POSTEMUCMD := osascript -e "tell application \"Terminal\" to activate"
-PREEMUCMD := /bin/bash deploy_apple2.sh
+INCBUILDCMD := /bin/bash tools/increaseBuild.sh
+BUILDRESCMD := /bin/bash tools/buildResources.sh
+PREEMUCMD :=  /bin/bash tools/buildDisc.sh
 POSTEMUCMD :=
 
 # On Windows machines VICE emulators may not be available in the PATH by default.
@@ -151,7 +163,7 @@ c64_EMUCMD := $(VICE_HOME)x64 -kernal kernal -VICIIdsize -autoload
 c128_EMUCMD := $(VICE_HOME)x128 -kernal kernal -VICIIdsize -autoload
 vic20_EMUCMD := $(VICE_HOME)xvic -kernal kernal -VICdsize -autoload
 pet_EMUCMD := $(VICE_HOME)xpet -Crtcdsize -autoload
-plus4_EMUCMD := $(VICE_HOME)xplus4 -TEDdsize -autoload
+plus4_EMUCMD := xplus4 -TEDdsize -autoload
 # So far there is no x16 emulator in VICE (why??) so we have to use xplus4 with -memsize option
 c16_EMUCMD := $(VICE_HOME)xplus4 -ramsize 16 -TEDdsize -autoload
 cbm510_EMUCMD := $(VICE_HOME)xcbm2 -model 510 -VICIIdsize -autoload
@@ -244,6 +256,15 @@ endif
 
 all: $(PROGRAM)
 
+res: 
+	$(BUILDRESCMD)
+
+disc: full
+
+full: $(PROGRAM) 
+	$(BUILDRESCMD)
+	$(PREEMUCMD)
+
 -include $(DEPENDS)
 -include $(STATEFILE)
 
@@ -302,12 +323,13 @@ $(TARGETOBJDIR)/%.o: %.a65 | $(TARGETOBJDIR)
 	cl65 -t $(CC65TARGET) -c --create-dep $(@:.o=.d) $(ASFLAGS) -o $@ $<
 
 $(PROGRAM): $(CONFIG) $(OBJECTS) $(LIBS)
-	mkdir -p bin
 	cl65 -t $(CC65TARGET) $(LDFLAGS) -o $@ $(patsubst %.cfg,-C %.cfg,$^)
+	$(INCBUILDCMD)
+
 
 test: $(PROGRAM)
 	$(PREEMUCMD)
-	$(EMUCMD) disc/drock.d64
+	$(EMUCMD) disc/kkniffel.d81
 	$(POSTEMUCMD)
 
 clean:
@@ -315,6 +337,8 @@ clean:
 	$(call RMFILES,$(DEPENDS))
 	$(call RMFILES,$(REMOVES))
 	$(call RMFILES,$(PROGRAM))
+	rm -rf bin/*
+
 
 else # $(words $(TARGETLIST)),1
 

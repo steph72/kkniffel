@@ -29,6 +29,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "utils.h"
+
 #ifdef DEBUG
 #include "debug.h"
 #endif
@@ -62,8 +64,7 @@ byte winCount = 0;
 #define H_COLUMN_START 5
 #define CURSOR_CHARACTER 0x5f
 
-
-char *drbuf = (char*)0x400;
+char *drbuf = (char *)0x400;
 
 byte textcolor16;    // text colour
 word gScreenSize;    // screen size (in characters)
@@ -86,6 +87,9 @@ void scrollUp();
 void cg_init(byte h640, byte v400, char *bordersFilename)
 {
     mega65_io_enable();
+    puts("\n");       // cancel leftover quote mode from wrapper or whatever
+    cbm_k_bsout(14);  // lowercase
+    cbm_k_bsout(147); // clr
     infoBlockCount = 0;
     for (cgi = 0; cgi < MAX_DBM_BLOCKS; ++cgi)
     {
@@ -444,7 +448,7 @@ dbmInfo *cg_loadDBM(char *filename, himemPtr address, himemPtr paletteAddress)
         bitmampAdr = address;
     }
 
-    // bytesRead= readExt(dbmfile, bitmampAdr, false);
+    bytesRead = readExt(dbmfile, bitmampAdr, false);
     fclose(dbmfile);
 
     if (info != NULL)
@@ -570,7 +574,7 @@ void cg_putc(char c)
     out = asciiToPetscii(c);
 
     cg_plotPetsciiChar(currentWin.xc + currentWin.x0, currentWin.yc + currentWin.y0, out,
-           extAttr);
+                       extAttr);
     currentWin.xc++;
     /*
         if (currentWin.xc >= currentWin.width) {
@@ -586,7 +590,7 @@ void cg_putc(char c)
     if (csrflag)
     {
         cg_plotPetsciiChar(currentWin.xc + currentWin.x0, currentWin.yc + currentWin.y0,
-               CURSOR_CHARACTER, 16);
+                           CURSOR_CHARACTER, 16);
     }
 }
 
@@ -637,7 +641,7 @@ void cg_cursor(byte onoff)
 {
     csrflag = onoff;
     cg_plotPetsciiChar(currentWin.xc + currentWin.x0, currentWin.yc + currentWin.y0,
-           (csrflag ? CURSOR_CHARACTER : 32), (csrflag ? 16 : 0));
+                       (csrflag ? CURSOR_CHARACTER : 32), (csrflag ? 16 : 0));
 }
 
 void box16(byte x0, byte y0, byte x1, byte y1, byte b, byte c)
