@@ -38,7 +38,7 @@
 #define MAX_ROLL_COUNT 3
 #define MAX_ROUNDS 50
 
-#define BOTTOMY 24
+#define BOTTOMY 25
 #define MID_X 40
 #define DELETEKEY 20
 #define RETURNKEY '\n'
@@ -79,8 +79,7 @@ unsigned int getJiffies()
 
 void clearLower(void)
 {
-	cg_gotoxy(0, BOTTOMY);
-	cg_puts("                                  ");
+	cg_block_raw(0,BOTTOMY,79,BOTTOMY,32,0);
 }
 
 void centerLine(char line, char *msg)
@@ -92,7 +91,7 @@ void centerLine(char line, char *msg)
 void centerLower(char *msg)
 {
 	clearLower();
-	cg_gotoxy((g_xmax / 2) - (strlen(msg) / 2), BOTTOMY);
+	cg_gotoxy((79 / 2) - (strlen(msg) / 2), BOTTOMY);
 	cg_revers(1);
 	cg_puts(msg);
 	cg_revers(0);
@@ -176,20 +175,16 @@ void doTurnRoll()
 	{
 		if (!benchmarkMode)
 
-#ifndef __APPLE2__
 			j = getJiffies();
 		do
 		{
-#endif
 
 			for (i = 0; i < 20; ++i)
 			{
 				doSingleRoll();
 			}
 
-#ifndef __APPLE2__
 		} while (getJiffies() - j < 60);
-#endif
 	}
 	else
 	{
@@ -439,7 +434,6 @@ void displayBoard()
 		cg_textcolor(textcolorForRow(i));
 		cg_printf(kc_labelForRow(i));
 	}
-	initDiceDisplay();
 }
 
 void startBenchmarkMode()
@@ -473,10 +467,10 @@ void bannerDice()
 	cg_textcolor(colDice);
 
 	cg_clrscr();
-	for (i = 0; i < 8; ++i)
+	for (i = 0; i < 15; ++i)
 	{
-		_plotDice(1 + (i % 6), i * 5, 0, 0);
-		_plotDice(1 + (i % 6), i * 5, BOTTOMY - 4, 0);
+		_plotDice(1 + (rand() % 6), i * 5, 0, 0);
+		_plotDice(1 + (rand() % 6), i * 5, BOTTOMY - 4, 0);
 	}
 }
 
@@ -612,38 +606,38 @@ void startgame()
 	namelength = (TABLE_WIDTH / numPlayers) - 1;
 	namelength = (TABLE_WIDTH / numPlayers) - 1;
 
-	cg_putsxy(0, 20, "(add '@' to player name to\r\ncreate a computer player!)");
+	cg_putsxy(0, 20, "(add '@' to player name to\ncreate a computer player!)");
 
 	for (i = 0; i < numPlayers; i++)
 	{
 		cg_gotoxy(0, 12 + i);
 		//do
 		//{
-			cg_printf("player %d name: ", i + 1);
-			strbuf=cg_input(16);
-			if (strlen(strbuf) == 0)
+		cg_printf("player %d name: ", i + 1);
+		strbuf = cg_input(16);
+		if (strlen(strbuf) == 0)
+		{
+			if (i == 0)
 			{
-				if (i == 0)
-				{
-					cg_printf("-> katja @");
-					strcpy(strbuf, "katja @");
-				}
-				if (i == 1)
-				{
-					cg_printf("-> stephan @");
-					strcpy(strbuf, "stephan @");
-				}
-				if (i == 2)
-				{
-					cg_printf("-> buba @");
-					strcpy(strbuf, "buba @");
-				}
-				if (i == 3)
-				{
-					cg_printf("-> schnitzel @");
-					strcpy(strbuf, "schnitzel @");
-				}
+				cg_printf("-> katja @");
+				strcpy(strbuf, "katja @");
 			}
+			if (i == 1)
+			{
+				cg_printf("-> stephan @");
+				strcpy(strbuf, "stephan @");
+			}
+			if (i == 2)
+			{
+				cg_printf("-> buba @");
+				strcpy(strbuf, "buba @");
+			}
+			if (i == 3)
+			{
+				cg_printf("-> schnitzel @");
+				strcpy(strbuf, "schnitzel @");
+			}
+		}
 		// } while (strlen(strbuf) == 0);
 		if (strchr(strbuf, '@'))
 		{
@@ -1072,7 +1066,7 @@ void mainloop()
 
 void initGame()
 {
-	cg_init(true,false,NULL);
+	cg_init(true, false, NULL);
 
 	gSeed = getJiffies();
 	srand(gSeed);

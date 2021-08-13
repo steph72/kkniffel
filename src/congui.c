@@ -42,6 +42,7 @@ byte winCount = 0;
 
 #define VIC_BASE 0xD000UL
 
+#define VIC2CTRL (*(unsigned char *)(0xd016))
 #define VIC4CTRL (*(unsigned char *)(0xd054))
 #define VIC3CTRL (*(unsigned char *)(0xd031))
 #define LINESTEP_LO (*(unsigned char *)(0xd058))
@@ -249,6 +250,7 @@ void cg_go16bit(byte h640, byte v400)
     {
         VIC3CTRL |= 0x80; // enable H640
         gScreenColumns = 80;
+        VIC2CTRL |= 0x01; // shift one pixel to the right
     }
     else
     {

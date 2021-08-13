@@ -31,11 +31,6 @@ const unsigned char colLowerSum = 3;   // lower sum
 const unsigned char colBonus = 2;      // bonus
 const unsigned char colCurrentRollIdx = 8;
 
-void initDiceDisplay(void)
-{
-    setDiceColor(COLOR_ORANGE);
-}
-
 void _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
 {
     register unsigned char xp;
@@ -57,6 +52,7 @@ void _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
 
 void plotDice(unsigned char nr, unsigned char value, char revers)
 {
+    cg_textcolor(COLOR_ORANGE);
     _plotDice(value, 75, nr * 5, revers);
 }
 

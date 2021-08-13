@@ -2,11 +2,10 @@
 void initIO(void);
 void startup(void);
 
-void __fastcall__ _plotDice(unsigned char value, unsigned char x, unsigned char y, char r);
+void _plotDice(unsigned char value, unsigned char x, unsigned char y, char r);
 void plotDice(unsigned char nr, unsigned char value, char revers);
 void eraseDie(unsigned char nr);
 
-void initDiceDisplay(void);
 
 extern const char *gTitle;
 extern const char dice[6][25];
