@@ -101,7 +101,7 @@ void cg_init(byte h640, byte v400, char *bordersFilename)
     cg_go16bit(h640, v400);
     if (bordersFilename)
     {
-        // cg_loadDBM(bordersFilename, EXTCHARBASE, SYSPAL);
+        cg_loadDBM(bordersFilename, EXTCHARBASE, SYSPAL);
         cg_resetPalette(); // assumes standard colours at 0x14000
     }
     cg_textcolor(COLOR_GREEN);
@@ -395,14 +395,10 @@ dbmInfo *cg_loadDBM(char *filename, himemPtr address, himemPtr paletteAddress)
 
     if (!dbmfile)
     {
-        cg_fatal("dbmnf %s", filename);
+        cg_fatal("dbm not found %s", filename);
     }
     fread(drbuf, 1, 9, dbmfile);
-    /*
-        if (0 != memcmp(drbuf, "dbmp", 4)) {
-            cg_fatal("ndbm %s", filename);
-        }
-        */
+
     numRows = drbuf[5];
     numColumns = drbuf[6];
     dbmOptions = drbuf[7];
@@ -864,30 +860,28 @@ char cg_getkeyP(byte x, byte y, const char *prompt)
     return cgetc();
 }
 
-void cg_hlinexy(byte x0, byte y, byte x1, byte secondary)
+void cg_hlinexy_raw(byte x0, byte y, byte x1, byte lineChar)
 {
-    static byte lineChar;
-    lineChar = secondary ? 6 : 0;
     for (cgi = x0; cgi <= x1; cgi++)
     {
         cg_plotExtChar(cgi, y, lineChar);
     }
 }
 
-void cg_vlinexy(byte x, byte y0, byte y1)
+void cg_vlinexy_raw(byte x, byte y0, byte y1, byte lineChar)
 {
-    cg_plotExtChar(x, y0, 2);
-    cg_plotExtChar(x, y1, 3);
-    for (cgi = y0 + 1; cgi <= y1 - 1; cgi++)
+    //cg_plotExtChar(x, y0, 2);
+    //cg_plotExtChar(x, y1, 3);
+    for (cgi = y0; cgi <= y1; cgi++)
     {
-        cg_plotExtChar(x, cgi, 1);
+        cg_plotExtChar(x, cgi, lineChar);
     }
 }
 
 void cg_frame(byte x0, byte y0, byte x1, byte y1)
 {
-    cg_hlinexy(x0, y0, x1, 0);
-    cg_hlinexy(x0, y1, x1, 0);
+    cg_hlinexy(x0, y0, x1);
+    cg_hlinexy(x0, y1, x1);
     cg_vlinexy(x0, y0 + 1, y1 - 1);
     cg_vlinexy(x1, y0 + 1, y1 - 1);
 }
@@ -899,7 +893,7 @@ void cg_borders(byte showSubwin)
     {
         cg_vlinexy(16, 1, 15);
         cg_vlinexy(0, 1, 15);
-        cg_hlinexy(0, 16, 39, 0);
+        cg_hlinexy(0, 16, 39);
     }
 }
 
@@ -915,7 +909,7 @@ void cg_titlec(byte tcol, byte splitScreen, char *t)
         {
             splitPos = splitScreen;
         }
-        cg_hlinexy(1, splitPos, 38, 1);
+        cg_hlinexy(1, splitPos, 38);
     }
     cg_textcolor(tcol);
     cg_center(0, 0, 40, t);
