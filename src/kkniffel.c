@@ -105,8 +105,6 @@ void waitkey(char key)
 		;
 }
 
-#define DICELEGEND_POS 73
-
 void plotDiceLegend(unsigned char flag)
 {
 	unsigned char i;
@@ -378,43 +376,30 @@ void displayBoard()
 
 	cg_clrscr();
 	cg_textcolor(colTable);
-	// horizontal lines
-	/*
-	hline(0,1,40,HLINE_STYLE_MID);
-	hline(0,8,40,HLINE_STYLE_MID);
-	hline(0,12,40,HLINE_STYLE_MID);
-	hline(0,20,40,HLINE_STYLE_MID);
-	hline(0,23,40,HLINE_STYLE_MID);
-	*/
+	cg_hlinexy(0, 1, g_xmax);
+	cg_hlinexy(0, 8, g_xmax);
+	cg_hlinexy(0, 12, g_xmax);
+	cg_hlinexy(0, 20, g_xmax);
+	cg_hlinexy(0, 23, g_xmax);
+
 	// player columns
 	for (i = 0; i < numPlayers; i++)
 	{
 		lineCol = columnForPlayer(i) - 1;
-		cg_gotoxy(lineCol, 0);
-		// cvline(23);
-		cg_gotoxy(lineCol, 1);
-		cg_putc(123);
-		cg_gotoxy(lineCol, 8);
-		cg_putc(123);
-		cg_gotoxy(lineCol, 12);
-		cg_putc(123);
-		cg_gotoxy(lineCol, 20);
-		cg_putc(123);
-		cg_gotoxy(lineCol, 23);
-		cg_putc(241);
+		cg_vlinexy(lineCol, 0, 23);
+		cg_plotExtChar(lineCol, 1, 1);
+		cg_plotExtChar(lineCol, 8, 1);
+		cg_plotExtChar(lineCol, 12, 1);
+		cg_plotExtChar(lineCol, 20, 1);
+		cg_plotExtChar(lineCol, 23, 3);
 	}
-	cg_gotoxy(g_xmax, 0);
-	// cvline(23);
-	cg_gotoxy(g_xmax, 1);
-	cg_putc(179);
-	cg_gotoxy(g_xmax, 8);
-	cg_putc(179);
-	cg_gotoxy(g_xmax, 12);
-	cg_putc(179);
-	cg_gotoxy(g_xmax, 20);
-	cg_putc(179);
-	cg_gotoxy(g_xmax, 23);
-	cg_putc(253);
+	cg_vlinexy(g_xmax, 0, 23);
+	cg_plotExtChar(g_xmax, 1, 2);
+	cg_plotExtChar(g_xmax, 8, 2);
+	cg_plotExtChar(g_xmax, 12, 2);
+	cg_plotExtChar(g_xmax, 20, 2);
+	cg_plotExtChar(g_xmax, 23, 6);
+
 	updatePlayer(0);
 	// rows
 	for (i = 0; i < 18; i++)
@@ -689,7 +674,7 @@ void doNextPlayer()
 	cg_puts("          ");
 	if (!kc_getIsComputerPlayer(_currentPlayer))
 	{
-		sprintf(buf, "%s's turn. <return> = start rolling", _pname[_currentPlayer]);
+		sprintf(buf, "%s's turn. Press <RETURN> to start rolling.", _pname[_currentPlayer]);
 		centerLower(buf);
 		waitkey(RETURNKEY);
 	}
@@ -902,7 +887,7 @@ void doCP()
 
 	if (!benchmarkMode)
 	{
-		centerLower("thinking...");
+		centerLower("Thinking...");
 	}
 
 	cp_analyze();
@@ -984,7 +969,7 @@ void mainloop()
 			{
 				cg_gotoxy(0, 0);
 				cg_textcolor(colCurrentRollIdx);
-				cg_printf("(roll %d/%d)", kc_getRollCount(), MAX_ROLL_COUNT);
+				cg_printf("(Roll %d/%d)", kc_getRollCount(), MAX_ROLL_COUNT);
 				plotDiceLegend(kc_getRollCount() < MAX_ROLL_COUNT);
 			}
 
@@ -997,11 +982,11 @@ void mainloop()
 
 				if (kc_getRollCount() < 3)
 				{
-					centerLower("Press [a-m] to score, or [1-5 + return] to reroll");
+					centerLower("Press [A-M] to score, or [1-5] + <RETURN> to reroll");
 				}
 				else
 				{
-					centerLower("Press [a-m] to score");
+					centerLower("Press [A-M] to score");
 				}
 
 				cmd = tolower(cg_getkey());
@@ -1032,12 +1017,13 @@ void mainloop()
 				}
 				if (cmd == ' ' && kc_getRollCount() < 3)
 				{
-					centerLower("The famous Katja move!");
 					for (idx = 0; idx < 5; ++idx)
 					{
 						kc_setShouldRoll(idx, true);
 						plotDice(idx, kc_diceValue(idx), kc_getShouldRoll(idx));
 					}
+					centerLower("-- Katja move! --");
+					jiffySleep(10);
 					clearLower();
 				}
 				if (cmd == RETURNKEY && kc_canRoll())
@@ -1070,7 +1056,7 @@ void mainloop()
 
 void initGame()
 {
-	cg_init(true, false, NULL);
+	cg_init(true, false, "borders.dbm");
 
 	gSeed = getJiffies();
 	srand(gSeed);

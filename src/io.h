@@ -6,6 +6,8 @@ void _plotDice(unsigned char value, unsigned char x, unsigned char y, char r);
 void plotDice(unsigned char nr, unsigned char value, char revers);
 void eraseDie(unsigned char nr);
 
+#define DICE_X_POS 72
+#define DICELEGEND_POS DICE_X_POS-2
 
 extern const char *gTitle;
 extern const char dice[6][25];

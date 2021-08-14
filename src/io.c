@@ -53,10 +53,10 @@ void _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
 void plotDice(unsigned char nr, unsigned char value, char revers)
 {
     cg_textcolor(COLOR_ORANGE);
-    _plotDice(value, 75, nr * 5, revers);
+    _plotDice(value, DICE_X_POS, nr * 5, revers);
 }
 
 void eraseDie(unsigned char nr)
 {
-    cg_block_raw(75,nr*5,79,(nr*5)+4,32,0);
+    cg_block_raw(DICE_X_POS,nr*5,DICE_X_POS+4,(nr*5)+4,32,0);
 }
