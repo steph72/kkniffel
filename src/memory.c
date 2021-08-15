@@ -12,8 +12,8 @@ void do_dma(void) {
     mega65_io_enable();
 
     //  for(i=0;i<24;i++)
-    //    printf("%02x ",PEEK(i+(unsigned int)&dmalist));
-    //  printf("\n");
+    //    cg_printf("%02x ",PEEK(i+(unsigned int)&dmalist));
+    //  cg_printf("\n");
     //  while(1) continue;
 
     // Now run DMA job (to and from anywhere, and list is in low 1MB)

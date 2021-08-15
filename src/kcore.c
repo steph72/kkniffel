@@ -23,6 +23,7 @@
 #include "kcore.h"
 
 #define MAX_ROLL_COUNT 3
+#define fastcall
 
 int scores[4] = {0, 0, 0, 0};
 char sPlayers[4] = {0, 1, 2, 3};
@@ -77,7 +78,7 @@ void rollDice(unsigned char nr)
 	dvalues[nr] = 1 + drand(6);
 }
 
-int __fastcall__ dcompare(const void *_a, const void *_b)
+int fastcall dcompare(const void *_a, const void *_b)
 {
 
 	unsigned char *a;

@@ -1,24 +1,24 @@
 #include "highscores.h"
 #include <stdio.h>
 #include <string.h>
-#include <conio.h>
+#include "congui.h"
 
-char hsNames[20][HS_LISTSIZE];
-int hsScores[HS_LISTSIZE];
+static char hsNames[20][HS_LISTSIZE];
+static int hsScores[HS_LISTSIZE];
 
 void setDefaultHighscores(void)
 {
     unsigned char i;
     for (i = 0; i < HS_LISTSIZE; ++i)
     {
-        strcpy(hsNames[i],"candulf");
+        strcpy(hsNames[i],"Candulf");
         hsScores[i] = 150-(i*10);
     }
 }
 
 char *highscoreAtPos(char pos)
 {
-    char line[40];
+    static char line[40];
     sprintf(line, "%2d. %s (%d)", pos, hsNames[pos - 1], hsScores[pos - 1]);
     return line;
 }

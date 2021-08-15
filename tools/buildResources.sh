@@ -9,6 +9,6 @@ for filename in images-src/ui/*.png; do
 done
 
 # convert aux images and shift palette
-#for filename in images-src/artwork/*.png; do
-#  python3 tools/png2dbm.py -vr $filename gamedata/$(basename $filename .png).dbm
-#done
+for filename in images-src/artwork/*.png; do
+  python3 tools/png2dbm.py -vr $filename gamedata/$(basename $filename .png).dbm
+done

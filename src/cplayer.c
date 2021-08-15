@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <conio.h>
+#include "congui.h"
 #include "kcore.h"
 
 int cp_scoreForRowChoice[18];
@@ -589,8 +589,8 @@ int markDiceSK(void)
 {
 	int row;
 #ifdef DEBUG
-	gotoxy(0, 0);
-	cputs("markd sk ");
+	cg_gotoxy(0, 0);
+	cg_puts("markd sk ");
 #endif
 	row = cp_sortedRerollRows[0];
 	kc_recalcTVals();
@@ -598,37 +598,37 @@ int markDiceSK(void)
 	if (cp_scoreForRowChoice[row] == -1)
 	{
 		// absolutely no clue what to mark? -> fall back to 4same
-		cputs("ones!");
+		cg_puts("ones!");
 		return markDiceForSame(row_4same);
 	}
 	if (row <= 5 && row >= 0)
 	{
 #ifdef DEBUG
-		cputc('1' + row);
+		cg_putc('1' + row);
 #endif
 		return markDiceForUpperSection(row);
 	}
 	else if (row == row_kniffel || row == row_3same || row == row_4same)
 	{
 #ifdef DEBUG
-		cputs("same");
-		cputc('1' + row);
+		cg_puts("same");
+		cg_putc('1' + row);
 #endif
 		return markDiceForSame(row);
 	}
 	else if (row == row_sm_straight || row == row_lg_straight)
 	{
 #ifdef DEBUG
-		cputs("straight");
-		cputc('1' + row);
+		cg_puts("straight");
+		cg_putc('1' + row);
 #endif
 		return markDiceForStraight(row);
 	}
 	else if (row == row_full_house)
 	{
 #ifdef DEBUG
-		cputs("fullh");
-		cputc('1' + row);
+		cg_puts("fullh");
+		cg_putc('1' + row);
 #endif
 		return markDiceForFullHouse();
 	}
@@ -674,8 +674,8 @@ int markDiceWP()
 	byte res;
 
 #ifdef DEBUG
-	gotoxy(0, 0);
-	cputs("markd wp");
+	cg_gotoxy(0, 0);
+	cg_puts("markd wp");
 #endif
 
 	countDice();
@@ -1030,8 +1030,8 @@ void cp_analyze(void)
 	analyzeKniffel(14);
 	qsort(cp_sortedRerollRows, 18, 1, scoreSort);
 #ifdef DEBUG
-	gotoxy(0, 23);
-	cprintf("keep: %c", kc_letterForRow(cp_sortedRerollRows[0]));
+	cg_gotoxy(0, 23);
+	cg_printf("keep: %c", kc_letterForRow(cp_sortedRerollRows[0]));
 #endif
 	/* debugDumpCP(); */
 }
@@ -1131,31 +1131,31 @@ void debugDumpChoices()
 	char i;
 	int earlyExitRow, exitRow;
 
-	textcolor(7);
+	cg_textcolor(7);
 	cp_analyze();
 	earlyExitRow = cp_markDice();
-	gotoxy(0, 0);
+	cg_gotoxy(0, 0);
 	for (i = 0; i < 18; ++i)
 	{
-		gotoxy(12, kc_rowForDataRow(i));
-		printf("%d ", cp_scoreForRowChoice[i]);
+		cg_gotoxy(12, kc_rowForDataRow(i));
+		cg_printf("%d ", cp_scoreForRowChoice[i]);
 	}
 	exitRow = cp_exitRow();
 	for (i = 0; i < 18; ++i)
 	{
-		gotoxy(15, kc_rowForDataRow(i));
-		printf("%d ", cp_scoreForRowChoice[i]);
+		cg_gotoxy(15, kc_rowForDataRow(i));
+		cg_printf("%d ", cp_scoreForRowChoice[i]);
 	}
-	gotoxy(10, 23);
+	cg_gotoxy(10, 23);
 	if (earlyExitRow != -1)
 	{
-		revers(1);
-		printf(" !! ee: %d !! ", earlyExitRow);
-		revers(0);
+		cg_revers(1);
+		cg_printf(" !! ee: %d !! ", earlyExitRow);
+		cg_revers(0);
 	}
 	else
 	{
-		printf("ee: %d,  e: %d  ", earlyExitRow, exitRow);
+		cg_printf("ee: %d,  e: %d  ", earlyExitRow, exitRow);
 	}
 }
 #endif

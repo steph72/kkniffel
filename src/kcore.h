@@ -2,7 +2,7 @@
 #define __kcore
 
 #define false 0
-#define true !false
+#define true 1
 
 typedef unsigned char byte;
 

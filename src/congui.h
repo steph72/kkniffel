@@ -3,14 +3,16 @@
 #ifndef __CONGUI
 #define __CONGUI
 
+#include "memory.h"
+
 #ifndef __CONGUI_VARS
 #define __CONGUI_VARS
 #define SCREENBASE 0x12000l            // 16 bit screen
-#define EXTCHARBASE 0x14000l           // extended characters for map
-#define SYSPAL 0x15000l                // system palette
-#define PALBASE 0x15300l               // palettes for loaded images
+#define EXTCHARBASE 0x18000l           // extended characters for map
+#define SYSPAL 0x19000l                // system palette
+#define PALBASE 0x19300l               // palettes for loaded images
 #define GRAPHBASE 0x40000l             // bitmap characters
-#define COLBASE 0xff80800l             // colours
+#define COLBASE 0xff81000l             // colours
 #endif
 
 #ifndef byte

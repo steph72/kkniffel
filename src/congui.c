@@ -31,10 +31,6 @@
 
 #include "utils.h"
 
-#ifdef DEBUG
-#include "debug.h"
-#endif
-
 textwin currentWin;
 textwin *saveWin = (textwin *)0x0600;
 byte winCount = 0;
@@ -217,7 +213,7 @@ himemPtr cg_allocGraphMem(word size)
 himemPtr cg_allocPalMem(word size)
 {
     himemPtr adr = nextFreePalMem;
-    if (nextFreePalMem < 0x18000)
+    if (nextFreePalMem < 0x1e000)
     {
         nextFreePalMem += size;
         return adr;
@@ -265,29 +261,29 @@ void cg_go16bit(byte h640, byte v400)
     if (v400)
     {
         VIC3CTRL |= 0x08;
-        gScreenRows = 27 * 2;
+        gScreenRows = 26 * 2;
     }
     else
     {
-        gScreenRows = 27;
+        gScreenRows = 26;
         VIC3CTRL &= 0xf7;
     }
 
     gScreenSize = gScreenRows * gScreenColumns;
     lfill_skip(SCREENBASE, 32, gScreenSize, 2);
-    lfill(COLBASE, 0, gScreenSize * 2);
+    lfill(COLBASE, 0, gScreenSize * 4); // *4 for clear rrb space
 
-    HOTREG &= 127;    // disable hotreg
-    POKE(53320u, 72); // top border position
-    POKE(53326u, 72); // top text position
+    HOTREG &= 127;         // disable hotreg
+    POKE(53320u, 72 + 16); // top border position
+    POKE(53326u, 72 + 16); // top text position
     POKE(53371u, gScreenRows);
 
     // move colour RAM because of stupid CBDOS himem usage
     POKE(53348u, COLOUR_RAM_OFFSET & 0xff);
     POKE(53349u, (COLOUR_RAM_OFFSET >> 8) & 0xff);
 
-    CHRCOUNT = gScreenColumns;
-    LINESTEP_LO = gScreenColumns * 2;
+    CHRCOUNT = gScreenColumns;        // *2 to reserve space for raster rewrite buffer
+    LINESTEP_LO = gScreenColumns * 2; // *2 to have 2 screen bytes == 1 character
     LINESTEP_HI = 0;
 
     SCNPTR_0 = SCREENBASE & 0xff; // screen to 0x12000
@@ -295,15 +291,7 @@ void cg_go16bit(byte h640, byte v400)
     SCNPTR_2 = (SCREENBASE >> 16) & 0xff;
     SCNPTR_3 &= 0xF0 | ((SCREENBASE) << 24 & 0xff);
 
-    currentWin.xc = 0;
-    currentWin.yc = 0;
-    textcolor16 = 5;
-    currentWin.x0 = 0;
-    currentWin.x1 = gScreenColumns - 1;
-    currentWin.y0 = 0;
-    currentWin.y1 = gScreenRows - 1;
-    currentWin.width = gScreenColumns;
-    currentWin.height = gScreenRows;
+    cg_resetwin();
 }
 
 void cg_go8bit()
@@ -332,9 +320,9 @@ void cg_plotExtChar(byte x, byte y, byte c)
     word charIdx;
     long adr;
     charIdx = (EXTCHARBASE / 64) + c;
-    adr = SCREENBASE + (x * 2) + (y * gScreenColumns * 2);
-    lpoke(adr, charIdx % 256);
-    lpoke(adr + 1, charIdx / 256);
+    adr = (x * 2) + (y * gScreenColumns * 2);
+    lpoke(SCREENBASE + adr, charIdx % 256);
+    lpoke(SCREENBASE + adr + 1, charIdx / 256);
 }
 
 void cg_addGraphicsRect(byte x0, byte y0, byte width, byte height,
@@ -471,17 +459,24 @@ void cg_loadPalette(himemPtr adr, byte size, byte reservedSysPalette)
     {
         if (reservedSysPalette && (cgi <= 15))
         {
-            continue;
+            //cg_puts("r");
+            //cg_getkey();
         }
-        colAdr = cgi * 3;
-        POKE(0xd100u + cgi, lpeek(adr + colAdr));     //  palette[colAdr];
-        POKE(0xd200u + cgi, lpeek(adr + colAdr + 1)); // palette[colAdr + 1];
-        POKE(0xd300u + cgi, lpeek(adr + colAdr + 2)); // palette[colAdr + 2];
+        else
+        {
+            //cg_puts("a");
+            //cg_getkey();
+            colAdr = cgi * 3;
+            POKE(0xd100u + cgi, lpeek(adr + colAdr));     //  palette[colAdr];
+            POKE(0xd200u + cgi, lpeek(adr + colAdr + 1)); // palette[colAdr + 1];
+            POKE(0xd300u + cgi, lpeek(adr + colAdr + 2)); // palette[colAdr + 2];
+        }
     }
 }
 
 void cg_displayDBMInfo(dbmInfo *info, byte x0, byte y0)
 {
+    // cg_printf("\nload pal %lx,%d,%d",info->paletteAdr,info->paletteSize,info->reservedSysPalette);
     cg_loadPalette(info->paletteAdr, info->paletteSize,
                    info->reservedSysPalette);
     cg_addGraphicsRect(x0, y0, info->columns, info->rows, info->baseAdr);
@@ -613,7 +608,7 @@ void cg_puts(const char *s)
     cg_pushWin();
     currentWin.x0 = 0;
     currentWin.y0 = 0;
-    currentWin.xc = 36;
+    currentWin.xc = gScreenColumns - 4;
     currentWin.yc = 0;
     sprintf(out, "%x", _heapmaxavail());
     _debug_cg_puts(out);
@@ -711,13 +706,7 @@ void cg_emptyBuffer(void)
 
 unsigned char cg_cgetc(void)
 {
-    unsigned char k;
-    do
-    {
-        k = PEEK(0xd610u);
-    } while (k == 0);
-    POKE(0xD610U, 0);
-    return k;
+    return cgetc();
 }
 
 char cg_getkey(void)
@@ -832,11 +821,15 @@ void cg_center(byte x, byte y, byte width, char *text)
         return;
     }
     cg_gotoxy(-1 + x + width / 2 - l / 2, y);
-    cg_plotExtChar(
+
+    /* cg_plotExtChar(
         currentWin.xc - 1, currentWin.yc,
         H_COLUMN_END); // leave space for imprint effect (thx tayger!)
+    */
     cg_puts(text);
+    /*
     cg_plotExtChar(currentWin.xc, currentWin.yc, H_COLUMN_START);
+    */
 }
 
 unsigned char nyblswap(unsigned char in) // oh why?!
@@ -854,9 +847,9 @@ void cg_setPalette(byte num, byte red, byte green, byte blue)
 char cg_getkeyP(byte x, byte y, const char *prompt)
 {
     cg_emptyBuffer();
-    gotoxy(x, y);
-    textcolor(COLOR_WHITE);
-    cputs(prompt);
+    cg_gotoxy(x, y);
+    cg_textcolor(COLOR_WHITE);
+    cg_puts(prompt);
     return cgetc();
 }
 
