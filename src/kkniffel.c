@@ -450,14 +450,14 @@ void displayCredits()
 	bannerDice();
 	cg_textcolor(colText);
 	cg_revers(1);
-	centerLine(5, " * K K n i f f e l * ");
+	centerLine(7, " * K K n i f f e l * ");
 	cg_revers(0);
-	centerLine(7, "Written by Stephan Kleinert");
-	centerLine(8, "at K-Burg, Bad Honnef, Hundehaus im Reinhardswald,");
-	centerLine(9, "and at K-Cottage, Erl, 2019 - 2021");
-	centerLine(11, "With very special thanks to");
-	centerLine(12, "Frau K., Buba K. Candor K. and the seven turtles!");
-	centerLine(14, "-- key --");
+	centerLine(9, "Written by Stephan Kleinert");
+	centerLine(10, "at K-Burg, Bad Honnef, Hundehaus im Reinhardswald,");
+	centerLine(11, "and at K-Cottage, Erl, 2019 - 2021");
+	centerLine(13, "With very special thanks to");
+	centerLine(14, "Frau K., Buba K. Candor K. and the seven turtles!");
+	centerLine(16, "-- key --");
 	cg_getkey();
 }
 
@@ -466,12 +466,12 @@ void displayInstructions()
 	bannerDice();
 	cg_textcolor(colText);
 	cg_revers(1);
-	centerLine(5, " * instructions * ");
+	centerLine(7, " * instructions * ");
 	cg_revers(0);
-	centerLine(7, "game keys:");
-	centerLine(9, "<return> to roll or reroll the dice");
-	centerLine(11, "<1-6> to select dice to reroll");
-	centerLine(12, "<a-m> to choose category to score");
+	centerLine(9, "game keys:");
+	centerLine(10, "<return> to roll or reroll the dice");
+	centerLine(12, "<1-6> to select dice to reroll");
+	centerLine(13, "<a-m> to choose category to score");
 	centerLine(14, "<s> to sort the dice");
 	centerLine(16, "-- key --");
 	cg_getkey();
@@ -494,6 +494,7 @@ void showHighscores(char *title, unsigned char positions[], unsigned char save)
 	{
 
 		cg_textcolor(colSplashRed);
+		cg_flash(1);
 		for (j = 0; j < numPlayers; ++j)
 		{
 			pos = positions[j];
@@ -502,6 +503,7 @@ void showHighscores(char *title, unsigned char positions[], unsigned char save)
 				centerLine(1 + (2 * pos), highscoreAtPos(pos));
 			}
 		}
+		cg_flash(0);
 	}
 
 	cg_textcolor(colLowerSum);
@@ -538,7 +540,7 @@ void startgame()
 #endif
 		centerLine(promptTopRow, (char *)gTitle);
 		cg_revers(0);
-		centerLine(promptTopRow + 2, "- Version 3.0 -");
+		centerLine(promptTopRow + 2, "- Version 3.0 beta 1 -");
 		centerLine(promptTopRow + 3, "Written by Stephan Kleinert");
 		cg_textcolor(colBonus);
 		centerLine(promptTopRow + 10, "or I)instructions C)redits H)ighscores");
@@ -790,7 +792,7 @@ void postRound()
 
 	if (newH && !benchmarkMode)
 	{
-		showHighscores("new highscores!", newHighscorePositions, true);
+		showHighscores("New High Scores!", newHighscorePositions, true);
 	}
 
 	cg_clrscr();
@@ -1100,12 +1102,6 @@ void initGame()
 	statTotal = 0;
 	numResults = 0;
 	cg_gotoxy(0, 0);
-
-	cg_puts("stephan   katja");
-	cg_textcolor(2);
-	cg_gotoxy(8, 0);
-	cg_putc(211);
-	cg_gotoxy(0, 2);
 
 	gSessionCount = kc_incrementAndGetSessionCount();
 	initHighscores();

@@ -45,6 +45,7 @@ void initPalette(void)
     cg_setPalette(colTempValue, 100, 155, 200);
     cg_setPalette(colTitleBG, 0, 0, 0);
     cg_setPalette(colTitleText, 100, 140, 180);
+    cg_setPalette(colSplashRed, 200, 0, 0);
 }
 
 void _plotDice(unsigned char value, unsigned char x, unsigned char y, char r)
